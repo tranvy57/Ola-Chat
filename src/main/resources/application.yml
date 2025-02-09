@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://localhost:3306/olachat?createDatabaseIfNotExist=true
+    username: root
+    password: sapassword
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  data:
+    mongodb:
+      uri: link to mongo atlats
+      database: Ola-Cluster
