@@ -11,5 +11,5 @@ spring:
 
   data:
     mongodb:
-      uri: link to mongo atlats
+      uri: mongodb+srv://root:sapassword@ola-cluster.ybrrl.mongodb.net/?retryWrites=true&w=majority&appName=Ola-Cluster
       database: Ola-Cluster
