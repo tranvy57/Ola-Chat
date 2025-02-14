@@ -4,7 +4,7 @@
  * Copyright (c) 2025 IUH. All rights reserved.
  */
 
-package vn.edu.iuh.fit.olachatbackend.controller;
+package vn.edu.iuh.fit.olachatbackend.controllers;
 /*
  * @description:
  * @author: Nguyen Thanh Nhut
@@ -17,7 +17,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import vn.edu.iuh.fit.olachatbackend.entity.Message;
+import vn.edu.iuh.fit.olachatbackend.entities.Message;
 
 @Controller
 public class ChatController {

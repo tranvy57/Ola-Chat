@@ -4,7 +4,7 @@
  * Copyright (c) 2025 IUH. All rights reserved.
  */
 
-package vn.edu.iuh.fit.olachatbackend.entity;
+package vn.edu.iuh.fit.olachatbackend.entities;
 /*
  * @description:
  * @author: Nguyen Thanh Nhut
@@ -15,7 +15,7 @@ package vn.edu.iuh.fit.olachatbackend.entity;
 import jakarta.persistence.Id;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
-import vn.edu.iuh.fit.olachatbackend.enumvalue.MessageStatus;
+import vn.edu.iuh.fit.olachatbackend.enums.MessageStatus;
 
 import java.io.Serializable;
 
