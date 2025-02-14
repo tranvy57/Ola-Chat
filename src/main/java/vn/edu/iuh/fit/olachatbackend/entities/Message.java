@@ -12,12 +12,16 @@ package vn.edu.iuh.fit.olachatbackend.entities;
  * @version:    1.0
  */
 
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageStatus;
+import vn.edu.iuh.fit.olachatbackend.enums.MessageType;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Document
 @Getter
@@ -27,11 +31,16 @@ import java.io.Serializable;
 public class Message implements Serializable {
 
     @Id
-    private String id;
-    private String senderName;
-    private String receiverName;
-    private String message;
-    private String date;
+    private ObjectId id;
+    private Long senderId;
+    private ObjectId conversationId;
+    private String content;
+    @Enumerated(EnumType.STRING)
+    private MessageType type;
+    private String mediaUrl;
     private MessageStatus status;
+    private List<DeliveryStatus> deliveryStatus;
+    private List<ReadStatus> readStatus;
+    private LocalDateTime createdAt;
 
 }

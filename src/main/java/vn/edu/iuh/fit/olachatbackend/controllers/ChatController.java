@@ -12,20 +12,24 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
  * @version:    1.0
  */
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
+import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
 @Controller
 public class ChatController {
 
     private final SimpMessagingTemplate template;
+    private final MessageService messageService;
 
-    public ChatController(SimpMessagingTemplate template) {
+    public ChatController(SimpMessagingTemplate template, MessageService messageService) {
         this.template = template;
+        this.messageService = messageService;
     }
 
     // Public chat
@@ -38,7 +42,8 @@ public class ChatController {
     // Private chat
     @MessageMapping("/private-message")
     public Message receivePrivateMessage(@Payload Message message) {
-        template.convertAndSendToUser(message.getReceiverName(), "/private", message);
+        messageService.saveMessage(message);
+        template.convertAndSendToUser(message.getConversationId().toString(), "/private", message);
         return message;
     }
 }

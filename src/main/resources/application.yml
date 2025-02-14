@@ -12,4 +12,4 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://root:sapassword@ola-cluster.ybrrl.mongodb.net/?retryWrites=true&w=majority&appName=Ola-Cluster
-      database: Ola-Cluster
+      database: ola-chat
