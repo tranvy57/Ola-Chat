@@ -12,11 +12,12 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 
 import java.util.List;
 
 public interface ConversationService {
-    Conversation createConversation(Conversation conversation);
-    List<Conversation> getAllConversationsByUserId(long userId);
+    Conversation createConversation(ConversationDTO conversationDTO);
+    List<Conversation> getAllConversationsByUserId(Long userId);
 }
