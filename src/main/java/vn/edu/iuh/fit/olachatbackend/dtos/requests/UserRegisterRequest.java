@@ -13,11 +13,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE) //Đổi tất cả các field thành private
-@Builder //Giúp tạo object nhanh hơn
-//UserCreationRequest rq1 = UserCreationRequest.builder()
-//                                              .username()
-//                                              .build()
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserRegisterRequest {
     @Size(min = 3, message = "Tên đăng nhập phải có ít nhất 3 ký tự")
     String username;

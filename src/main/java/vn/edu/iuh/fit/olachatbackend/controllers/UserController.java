@@ -31,4 +31,12 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping("/myInfo")
+    public MessageResponse<UserResponse> getMyInfo() {
+        return MessageResponse.<UserResponse>builder()
+                .message("Lấy thông tin cá nhân thành công")
+                .data(userService.getMyInfo())
+                .build();
+    }
+
 }
