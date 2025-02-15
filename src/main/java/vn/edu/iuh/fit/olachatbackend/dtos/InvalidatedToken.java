@@ -1,6 +1,5 @@
-package vn.edu.iuh.fit.olachatbackend.entities;
+package vn.edu.iuh.fit.olachatbackend.dtos;
 
-import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.*;
 import lombok.experimental.FieldDefaults;

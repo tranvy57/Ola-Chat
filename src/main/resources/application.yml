@@ -19,8 +19,8 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb+srv://mongodb:mongopassword@ola-cluster.2db1h.mongodb.net/?retryWrites=true&w=majority&appName=Ola-Cluster
-      database: Ola-Cluster
+      uri: mongodb+srv://mongodb:mongopassword@ola-cluster.2db1h.mongodb.net/?retryWrites=true&w=majority&appName=ola-chat-db
+      database: ola-chat-db
     redis:
       host: localhost
       port: 6379

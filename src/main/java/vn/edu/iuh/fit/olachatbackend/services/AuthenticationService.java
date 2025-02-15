@@ -18,7 +18,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
-import vn.edu.iuh.fit.olachatbackend.entities.InvalidatedToken;
+import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
