@@ -119,10 +119,10 @@ public class AuthenticationService {
             throw new UnauthorizedException("Token đã bị vô hiệu hóa");
         }
 
-        var id = signedJWT.getJWTClaimsSet().getSubject();
+        var username = signedJWT.getJWTClaimsSet().getSubject();
 
         var user =
-                userRepository.findById(id).orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
+                userRepository.findByUsername(username).orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
 
         var token = generateToken(user);
 
@@ -133,7 +133,7 @@ public class AuthenticationService {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getUserId())
+                .subject(user.getUsername())
                 .issuer("zycute")
                 .issueTime(new Date())
                 .expirationTime(new Date(
