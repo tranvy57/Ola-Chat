@@ -6,6 +6,7 @@ import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 
 import java.time.LocalDate;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -19,7 +20,7 @@ public class UserResponse {
     String username;
     String displayName;
     String avatar;
-    LocalDate dob;
+    Date dob;
     UserStatus status;
 
     Role role;
