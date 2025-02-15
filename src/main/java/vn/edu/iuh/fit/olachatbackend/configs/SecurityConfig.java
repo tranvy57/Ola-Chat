@@ -19,10 +19,10 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {"/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/users/**"
+    private final String[] PUBLIC_ENDPOINTS = {"/auth/login", "/auth/introspect", "/auth/logout", "/auth/refresh", "/users"
     };
 
-    private final String[] ADMIN_ENDPOINTS = {
+    private final String[] ADMIN_ENDPOINTS = { "/users"
 
     };
 

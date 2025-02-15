@@ -1,9 +1,11 @@
 package vn.edu.iuh.fit.olachatbackend.dtos.responses;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
+import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
+
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -11,13 +13,14 @@ import vn.edu.iuh.fit.olachatbackend.enums.Role;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class UserResponse {
-    @JsonProperty("userId")
     String userId;
     String email;
     String phone;
     String username;
-    String fullName;
+    String displayName;
+    String avatar;
+    LocalDate dob;
+    UserStatus status;
+
     Role role;
-
-
 }

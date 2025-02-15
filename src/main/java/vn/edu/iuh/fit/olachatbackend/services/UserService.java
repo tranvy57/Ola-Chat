@@ -1,8 +1,11 @@
 package vn.edu.iuh.fit.olachatbackend.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 
@@ -16,9 +19,18 @@ public class UserService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public List<UserResponse> getUsers() {
         UserResponse userResponse = new UserResponse();
         userResponse = userMapper.toUserResponse(userRepository.findAll().get(0));
         return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
+    }
+
+    public UserResponse registerUser(UserRegisterRequest request){
+        User user = userMapper.toUser(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 }

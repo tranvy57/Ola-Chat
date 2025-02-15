@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import vn.edu.iuh.fit.olachatbackend.dtos.MessageResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.TestDto;
 import vn.edu.iuh.fit.olachatbackend.services.TestService;
 
