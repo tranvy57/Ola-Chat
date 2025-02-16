@@ -13,15 +13,18 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  */
 
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.Participant;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
+import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
@@ -35,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ParticipantRepository participantRepository;
 
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -79,5 +83,18 @@ public class UserServiceImpl implements UserService {
 
     public void deleteUser(String userId) {
         userRepository.deleteById(userId);
+    }
+
+    @Override
+    public List<UserResponse> getUsersByConversationId(String conversationId) {
+        List<Participant> participants = participantRepository.findParticipantByConversationId(new ObjectId(conversationId));
+
+        List<String> userIds = participants.stream()
+                .map(Participant::getUserId)
+                .toList();
+
+        List<User> users = userRepository.findAllById(userIds);
+
+        return users.stream().map(userMapper::toUserResponse).toList();
     }
 }

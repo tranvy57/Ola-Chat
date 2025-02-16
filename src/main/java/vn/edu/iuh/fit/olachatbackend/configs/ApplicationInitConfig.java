@@ -35,7 +35,7 @@ public class ApplicationInitConfig {
         };
     }
 
-    @Bean
+//    @Bean
     CommandLineRunner initData(MessageRepository messageRepository) {
         return args -> {
             if (messageRepository.count() == 0) {

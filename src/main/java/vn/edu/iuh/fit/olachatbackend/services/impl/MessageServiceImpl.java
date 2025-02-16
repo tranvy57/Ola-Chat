@@ -47,6 +47,7 @@ public class MessageServiceImpl implements MessageService {
 
     public List<MessageDTO> getMessagesByConversationId(String conversationId) {
         List<Message> messages = messageRepository.findByConversationId(new ObjectId(conversationId));
+
         return messages.stream().map(msg -> MessageDTO.builder()
                 .id(msg.getId().toHexString())
                 .senderId(msg.getSenderId())

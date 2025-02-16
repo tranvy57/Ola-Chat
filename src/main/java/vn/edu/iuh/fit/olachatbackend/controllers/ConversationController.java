@@ -16,10 +16,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.services.ConversationService;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
+import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
 import java.util.List;
 
@@ -28,10 +30,12 @@ import java.util.List;
 public class ConversationController {
     private final ConversationService conversationService;
     private final MessageService messageService;
+    private final UserService userService;
 
-    public ConversationController(ConversationService conversationService, MessageService messageService) {
+    public ConversationController(ConversationService conversationService, MessageService messageService, UserService userService) {
         this.conversationService = conversationService;
         this.messageService = messageService;
+        this.userService = userService;
     }
 
     @PostMapping
@@ -48,5 +52,11 @@ public class ConversationController {
     public ResponseEntity<List<MessageDTO>> getMessagesByConversationId(@PathVariable String id) {
         List<MessageDTO> messages = messageService.getMessagesByConversationId(id);
         return ResponseEntity.ok(messages);
+    }
+
+    @GetMapping("/{conversationId}/users")
+    public ResponseEntity<List<UserResponse>> getUsersByConversation(@PathVariable String conversationId) {
+        List<UserResponse> users = userService.getUsersByConversationId(conversationId);
+        return ResponseEntity.ok(users);
     }
 }

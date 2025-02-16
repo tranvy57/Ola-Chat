@@ -4,11 +4,13 @@ server:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  tomcat:
+        max-http-header-size: 64KB
 
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3306/ola-chat?createDatabaseIfNotExist=true
+    url: jdbc:mariadb://localhost:3306/olachat?createDatabaseIfNotExist=true
     username: root
     password: sapassword
   jpa:

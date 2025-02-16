@@ -66,6 +66,7 @@ public class ConversationServiceImpl implements ConversationService {
                 .toList();
 
         List<Conversation> conversations = conversationRepository.findByIdIn(conversationIds);
+
         return conversations.stream().map(conversation -> ConversationDTO.builder()
                         .id(conversation.getId() != null ? conversation.getId().toHexString() : null)
                         .name(conversation.getName())

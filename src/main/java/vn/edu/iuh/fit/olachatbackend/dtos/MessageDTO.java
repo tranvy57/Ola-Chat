@@ -27,7 +27,7 @@ import java.util.List;
 @NoArgsConstructor
 public class MessageDTO {
     private String id;
-    private Long senderId;
+    private String senderId;
     private String conversationId;
     private String content;
     private MessageType type;

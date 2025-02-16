@@ -20,11 +20,11 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "messages")
+@Document(collection = "message")
 public class Message {
     @Id
     private ObjectId id;
-    private Long senderId;
+    private String senderId;
     private ObjectId conversationId;
     private String content;
     @Enumerated(EnumType.STRING)
