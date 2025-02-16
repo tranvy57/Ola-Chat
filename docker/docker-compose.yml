@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  # nginx:
+  #   image: nginx
+  #   ports:
+  #    - "8080:80"
+
+
+  redis:
+    image: redis
+    container_name: redis-chat-cache
+    ports:
+      - "6379:6379"
+#  jenkins:
+#    image: jenkins/jenkins:lts
+#    container_name: jenkins-tour
+#    privileged: true
+#    user: root
+#    ports:
+#      - "8080:8080"
+#      - "50000:50000"
+#    restart: always
+

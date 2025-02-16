@@ -32,5 +32,5 @@ public class ConversationDTO {
     private LastMessage lastMessage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<Long> userIds;
+    private List<String> userIds;
 }

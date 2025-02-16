@@ -21,5 +21,5 @@ import java.util.List;
 
 @Repository
 public interface ParticipantRepository extends MongoRepository<Participant, ObjectId> {
-    List<Participant> findByUserId(Long userId);
+    List<Participant> findByUserId(String userId);
 }

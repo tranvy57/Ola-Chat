@@ -19,5 +19,5 @@ import java.util.List;
 
 public interface ConversationService {
     ConversationDTO createConversation(ConversationDTO conversationDTO);
-    List<ConversationDTO> getAllConversationsByUserId(Long userId);
+    List<ConversationDTO> getAllConversationsByUserId(String userId);
 }

@@ -40,7 +40,7 @@ public class ConversationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ConversationDTO>> getConversationsByUserId(@RequestParam("userId") Long userId) {
+    public ResponseEntity<List<ConversationDTO>> getConversationsByUserId(@RequestParam("userId") String userId) {
         return ResponseEntity.ok(conversationService.getAllConversationsByUserId(userId));
     }
 

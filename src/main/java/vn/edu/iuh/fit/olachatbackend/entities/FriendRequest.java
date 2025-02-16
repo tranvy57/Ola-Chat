@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
  */
 
 @Entity
+@Table(name = "friend_request")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,12 +28,25 @@ import java.time.LocalDateTime;
 @Builder
 public class FriendRequest {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long senderId;
-    private Long receiverId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+    @ManyToOne
+    @JoinColumn(name = "sender_id")
+    private User sender;
+
+    @ManyToOne
+    @JoinColumn(name = "receiver_id")
+    private User receiver;
+
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
     private LocalDateTime sentAt;
     private LocalDateTime responseAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.sentAt = LocalDateTime.now();
+        this.status = RequestStatus.PENDING;
+    }
+
 }

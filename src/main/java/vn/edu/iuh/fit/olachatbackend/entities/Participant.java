@@ -32,7 +32,7 @@ public class Participant {
     @Id
     private ObjectId id;
     private ObjectId conversationId;
-    private Long userId;
+    private String userId;
     @Enumerated(EnumType.STRING)
     private ParticipantRole role;
     private LocalDateTime joinedAt;

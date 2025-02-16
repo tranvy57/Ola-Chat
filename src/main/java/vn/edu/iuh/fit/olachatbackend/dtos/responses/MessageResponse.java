@@ -1,4 +1,4 @@
-package vn.edu.iuh.fit.olachatbackend.dtos;
+package vn.edu.iuh.fit.olachatbackend.dtos.responses;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;

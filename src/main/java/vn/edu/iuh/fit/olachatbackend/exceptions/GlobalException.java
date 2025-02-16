@@ -3,10 +3,11 @@ package vn.edu.iuh.fit.olachatbackend.exceptions;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import vn.edu.iuh.fit.olachatbackend.dtos.MessageResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 
 @ControllerAdvice
 @Hidden
@@ -60,9 +61,22 @@ public class GlobalException {
         return new ResponseEntity<>(errorDto, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<?> handleMaxSizeException(MaxUploadSizeExceededException exc) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body(new MessageResponse(413, "Kích thước file vượt quá giới hạn cho phép", false));
+    }
+
+    @ExceptionHandler(value = MethodArgumentNotValidException.class)
+    ResponseEntity<ErrorMessageDto> handlingMethodArgumentNotValidException(MethodArgumentNotValidException exception){
+
+        ErrorMessageDto apiResponse =ErrorMessageDto.builder()
+                .message(exception.getFieldError().getDefaultMessage())
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .success(false)
+                .build();
+
+        return ResponseEntity.badRequest().body(apiResponse);
     }
 }

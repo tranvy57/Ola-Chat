@@ -58,7 +58,7 @@ public class ConversationServiceImpl implements ConversationService {
     }
 
     @Override
-    public List<ConversationDTO> getAllConversationsByUserId(Long userId) {
+    public List<ConversationDTO> getAllConversationsByUserId(String userId) {
         List<Participant> participants = participantRepository.findByUserId(userId);
 
         List<ObjectId> conversationIds = participants.stream()

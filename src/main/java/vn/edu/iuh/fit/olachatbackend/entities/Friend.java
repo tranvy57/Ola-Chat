@@ -14,6 +14,7 @@ package vn.edu.iuh.fit.olachatbackend.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 
 import java.time.LocalDateTime;
@@ -23,15 +24,29 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class Friend {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long userId;
-    private Long friendId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "friend_id")
+    private User friend;
+
     @Enumerated(EnumType.STRING)
     private FriendStatus status;
     private LocalDateTime friendSince;
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.friendSince = LocalDateTime.now();
+    }
+
 }

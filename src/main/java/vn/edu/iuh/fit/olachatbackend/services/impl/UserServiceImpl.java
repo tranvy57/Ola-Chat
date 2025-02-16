@@ -13,8 +13,15 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  */
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
+import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
+import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
@@ -26,17 +33,51 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
-    public Optional<User> getUserById(Long id) {
+    public Optional<User> getUserById(String id) {
         return userRepository.findById(id);
     }
 
     @Override
     public List<User> findAll() {
         return userRepository.findAll();
+    }
+
+    public List<UserResponse> getUsers() {
+        UserResponse userResponse = new UserResponse();
+        userResponse = userMapper.toUserResponse(userRepository.findAll().get(0));
+        return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
+    }
+
+    public UserResponse registerUser(UserRegisterRequest request){
+        String username = request.getUsername();
+        if (userRepository.existsByUsername(username)) {
+            throw new InternalServerErrorException("Tên đăng nhập đã tồn tại");
+        }
+        User user = userMapper.toUser(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+
+    public UserResponse getMyInfo() {
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(name)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        return userMapper.toUserResponse(user);
+    }
+
+
+    public void deleteUser(String userId) {
+        userRepository.deleteById(userId);
     }
 }

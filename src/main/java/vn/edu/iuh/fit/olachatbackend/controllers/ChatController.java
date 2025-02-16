@@ -12,14 +12,12 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
  * @version:    1.0
  */
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
-import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
 @Controller
@@ -36,8 +34,8 @@ public class ChatController {
     // Public chat
     @MessageMapping("/message")
     @SendTo("/chatroom/public")
-    public Message receivePublicMessage(@Payload Message message) {
-        return message;
+    public MessageDTO receivePublicMessage(@Payload MessageDTO messageDTO) {
+        return messageDTO;
     }
 
     // Private chat

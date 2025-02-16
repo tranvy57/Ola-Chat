@@ -11,4 +11,5 @@ public enum MessageType {
     private MessageType(String value) {
         this.value = value;
     }
+
 }
