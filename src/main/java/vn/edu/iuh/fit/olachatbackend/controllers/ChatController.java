@@ -18,6 +18,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
@@ -41,9 +42,10 @@ public class ChatController {
 
     // Private chat
     @MessageMapping("/private-message")
-    public Message receivePrivateMessage(@Payload Message message) {
-        messageService.saveMessage(message);
-        template.convertAndSendToUser(message.getConversationId().toString(), "/private", message);
-        return message;
+    public MessageDTO receivePrivateMessage(@Payload MessageDTO messageDTO) {
+        messageService.save(messageDTO);
+//        template.convertAndSendToUser(messageDTO.getConversationId(), "/private", messageDTO);
+        template.convertAndSend("/user/" + messageDTO.getConversationId() + "/private", messageDTO);
+        return messageDTO;
     }
 }

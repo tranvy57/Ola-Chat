@@ -15,10 +15,12 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
+import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -26,11 +28,36 @@ import java.util.List;
 public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
 
-    public Message saveMessage(Message message) {
-        return messageRepository.save(message);
+    @Override
+    public MessageDTO save(MessageDTO messageDTO) {
+        Message message = Message.builder()
+                .senderId(messageDTO.getSenderId())
+                .conversationId(new ObjectId(messageDTO.getConversationId()))
+                .content(messageDTO.getContent())
+                .type(messageDTO.getType())
+                .mediaUrl(messageDTO.getMediaUrl())
+                .status(messageDTO.getStatus())
+                .deliveryStatus(messageDTO.getDeliveryStatus())
+                .readStatus(messageDTO.getReadStatus())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return messageDTO;
     }
 
-    public List<Message> getMessagesByConversationId(String conversationId) {
-        return messageRepository.findByConversationId(new ObjectId(conversationId));
+    public List<MessageDTO> getMessagesByConversationId(String conversationId) {
+        List<Message> messages = messageRepository.findByConversationId(new ObjectId(conversationId));
+        return messages.stream().map(msg -> MessageDTO.builder()
+                .id(msg.getId().toHexString())
+                .senderId(msg.getSenderId())
+                .conversationId(msg.getConversationId().toHexString())
+                .content(msg.getContent())
+                .type(msg.getType())
+                .mediaUrl(msg.getMediaUrl())
+                .status(msg.getStatus())
+                .deliveryStatus(msg.getDeliveryStatus())
+                .readStatus(msg.getReadStatus())
+                .createdAt(msg.getCreatedAt())
+                .build()).toList();
     }
 }

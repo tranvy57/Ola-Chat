@@ -12,11 +12,12 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 
 import java.util.List;
 
 public interface MessageService {
-    Message saveMessage(Message message);
-    List<Message> getMessagesByConversationId(String conversationId);
+    List<MessageDTO> getMessagesByConversationId(String conversationId);
+    MessageDTO save(MessageDTO messageDTO);
 }

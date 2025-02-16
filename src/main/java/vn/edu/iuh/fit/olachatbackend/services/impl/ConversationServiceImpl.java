@@ -32,7 +32,7 @@ public class ConversationServiceImpl implements ConversationService {
     private final ConversationRepository conversationRepository;
     private final ParticipantRepository participantRepository;
 
-    public Conversation createConversation(ConversationDTO conversationDTO) {
+    public ConversationDTO createConversation(ConversationDTO conversationDTO) {
         Conversation conversation = Conversation.builder()
                 .name(conversationDTO.getName())
                 .avatar(conversationDTO.getAvatar())
@@ -54,18 +54,31 @@ public class ConversationServiceImpl implements ConversationService {
                 .toList();
         participantRepository.saveAll(participants);
 
-        return conversation;
+        return conversationDTO;
     }
 
     @Override
-    public List<Conversation> getAllConversationsByUserId(Long userId) {
+    public List<ConversationDTO> getAllConversationsByUserId(Long userId) {
         List<Participant> participants = participantRepository.findByUserId(userId);
-        System.out.println("cc: "+ participants.size());
+
         List<ObjectId> conversationIds = participants.stream()
                 .map(Participant::getConversationId)
                 .toList();
-        System.out.println("cc2: "+ conversationIds.size());
 
-        return conversationRepository.findByIdIn(conversationIds);
+        List<Conversation> conversations = conversationRepository.findByIdIn(conversationIds);
+        return conversations.stream().map(conversation -> ConversationDTO.builder()
+                        .id(conversation.getId() != null ? conversation.getId().toHexString() : null)
+                        .name(conversation.getName())
+                        .avatar(conversation.getAvatar())
+                        .type(conversation.getType())
+                        .lastMessage(conversation.getLastMessage())
+                        .createdAt(conversation.getCreatedAt())
+                        .updatedAt(conversation.getUpdatedAt())
+                        .userIds(participants.stream()
+                                .map(Participant::getUserId)
+                                .distinct()
+                                .toList())
+                        .build())
+                .toList();
     }
 }

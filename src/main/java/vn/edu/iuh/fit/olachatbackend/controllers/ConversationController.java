@@ -12,11 +12,10 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
  * @version:    1.0
  */
 
-import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.services.ConversationService;
@@ -36,20 +35,18 @@ public class ConversationController {
     }
 
     @PostMapping
-    public ResponseEntity<Conversation> createConversation(@RequestBody ConversationDTO conversationDTO) {
+    public ResponseEntity<ConversationDTO> createConversation(@RequestBody ConversationDTO conversationDTO) {
         return ResponseEntity.ok(conversationService.createConversation(conversationDTO));
     }
 
     @GetMapping
-    public ResponseEntity<List<Conversation>> getConversationsByUserId(@RequestParam("userId") Long userId) {
+    public ResponseEntity<List<ConversationDTO>> getConversationsByUserId(@RequestParam("userId") Long userId) {
         return ResponseEntity.ok(conversationService.getAllConversationsByUserId(userId));
     }
 
-
-
     @GetMapping("/{id}/messages")
-    public ResponseEntity<List<Message>> getMessagesByConversationId(@PathVariable String id) {
-        List<Message> messages = messageService.getMessagesByConversationId(id);
+    public ResponseEntity<List<MessageDTO>> getMessagesByConversationId(@PathVariable String id) {
+        List<MessageDTO> messages = messageService.getMessagesByConversationId(id);
         return ResponseEntity.ok(messages);
     }
 }

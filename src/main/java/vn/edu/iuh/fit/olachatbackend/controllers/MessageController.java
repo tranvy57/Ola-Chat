@@ -12,29 +12,25 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
  * @version:    1.0
  */
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
-import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
+import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/messages")
 public class MessageController {
-    private final MessageRepository messageRepository;
+    private final MessageService messageService;
 
-    public MessageController(MessageRepository messageRepository) {
-        this.messageRepository = messageRepository;
+    public MessageController(MessageService messageService) {
+        this.messageService = messageService;
     }
 
     @PostMapping
-    public Message createMessage(@RequestBody Message message) {
-        return messageRepository.save(message);
+    public MessageDTO createMessage(@RequestBody MessageDTO messageDTO) {
+        return messageService.save(messageDTO);
     }
 
-    @GetMapping
-    public List<Message> getAllMessages() {
-        return messageRepository.findAll();
-    }
 }

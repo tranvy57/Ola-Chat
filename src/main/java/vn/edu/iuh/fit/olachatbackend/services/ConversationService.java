@@ -18,6 +18,6 @@ import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import java.util.List;
 
 public interface ConversationService {
-    Conversation createConversation(ConversationDTO conversationDTO);
-    List<Conversation> getAllConversationsByUserId(Long userId);
+    ConversationDTO createConversation(ConversationDTO conversationDTO);
+    List<ConversationDTO> getAllConversationsByUserId(Long userId);
 }
