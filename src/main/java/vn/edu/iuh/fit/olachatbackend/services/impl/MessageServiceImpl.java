@@ -41,7 +41,7 @@ public class MessageServiceImpl implements MessageService {
                 .readStatus(messageDTO.getReadStatus())
                 .createdAt(LocalDateTime.now())
                 .build();
-
+        messageRepository.save(message);
         return messageDTO;
     }
 
