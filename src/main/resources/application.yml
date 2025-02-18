@@ -9,10 +9,10 @@ server:
 
 spring:
   datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3306/olachat?createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/ola-chat?createDatabaseIfNotExist=true
     username: root
-    password: sapassword
+    password: root
   jpa:
     hibernate:
       ddl-auto: update
