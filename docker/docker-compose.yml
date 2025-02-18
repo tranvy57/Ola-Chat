@@ -4,7 +4,17 @@ services:
   #   image: nginx
   #   ports:
   #    - "8080:80"
-
+  mysql:
+    image: mysql:8.0.39
+    container_name: mysql-ola-chat-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ola-chat
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./data/ola-volumn:/var/lib/mysql
 
   redis:
     image: redis
