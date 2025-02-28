@@ -17,6 +17,7 @@ import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.AddMemberRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.GroupRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.GroupUpdateRequest;
 import vn.edu.iuh.fit.olachatbackend.services.GroupService;
@@ -45,25 +46,43 @@ public class GroupController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateGroup(@PathVariable String id, @RequestParam String userId,
                                                     @RequestBody GroupUpdateRequest request) {
-        return ResponseEntity.ok(groupService.updateGroup(new ObjectId(id), userId, request));
+        groupService.updateGroup(new ObjectId(id), userId, request);
+        return ResponseEntity.ok("Cập nhật nhóm thành công!");
     }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteGroup(@PathVariable ObjectId id, @RequestParam String userId) {
-//        groupService.deleteGroup(id, userId);
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    @PostMapping("/{id}/join")
-//    public ResponseEntity<Void> joinGroup(@PathVariable ObjectId id, @RequestParam String userId) {
-//        groupService.joinGroup(id, userId);
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    @PostMapping("/{id}/leave")
-//    public ResponseEntity<Void> leaveGroup(@PathVariable ObjectId id, @RequestParam String userId) {
-//        groupService.leaveGroup(id, userId);
-//        return ResponseEntity.ok().build();
-//    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteGroup(@PathVariable String id, @RequestParam String userId) {
+        groupService.deleteGroup(new ObjectId(id), userId);
+        return ResponseEntity.ok("Đã xóa nhóm thành công!");
+    }
+
+    @PostMapping("/{id}/join")
+    public ResponseEntity<?> joinGroup(@PathVariable String id, @RequestParam String userId) {
+        groupService.joinGroup(new ObjectId(id), userId);
+        return ResponseEntity.ok("Tham gia nhóm thành công!");
+    }
+
+    @PostMapping("/{id}/leave")
+    public ResponseEntity<?> leaveGroup(@PathVariable String id, @RequestParam String userId) {
+        groupService.leaveGroup(new ObjectId(id), userId);
+        return ResponseEntity.ok("Rời nhóm thành công!");
+    }
+
+    @PostMapping("/{id}/add-member")
+    public ResponseEntity<?> addMembersToGroup(@PathVariable String id,
+                                                          @RequestParam String ownerId,
+                                                          @RequestBody AddMemberRequest request) {
+        groupService.addMembers(new ObjectId(id), ownerId, request);
+        return ResponseEntity.ok("Đã thêm thành viên thành công!");
+    }
+
+    @DeleteMapping("/{id}/remove/{userId}")
+    public ResponseEntity<?> removeUserFromGroup(
+            @PathVariable String id,
+            @PathVariable String userId,
+            @RequestHeader("requesterId") String requesterId) {
+        groupService.removeUserFromGroup(new ObjectId(id), userId, requesterId);
+        return ResponseEntity.ok("Đã xóa thành viên khỏi nhóm");
+    }
 
 }

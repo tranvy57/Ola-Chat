@@ -14,12 +14,21 @@ package vn.edu.iuh.fit.olachatbackend.services;
 
 import org.bson.types.ObjectId;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.AddMemberRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.GroupUpdateRequest;
 
 import java.util.List;
 
 public interface GroupService {
     ConversationDTO createGroup(String creatorId, String name, String avatar, List<String> userIds);
-    ConversationDTO updateGroup(ObjectId groupId, String userId, GroupUpdateRequest request);
+    void updateGroup(ObjectId groupId, String userId, GroupUpdateRequest request);
     ConversationDTO getGroupById(ObjectId id);
+
+    void deleteGroup(ObjectId groupId, String userId);
+    void joinGroup(ObjectId groupId, String userId);
+    void leaveGroup(ObjectId groupId, String userId);
+
+    void addMembers(ObjectId objectId, String ownerId, AddMemberRequest request);
+
+    void removeUserFromGroup(ObjectId groupId, String userId, String requesterId);
 }
