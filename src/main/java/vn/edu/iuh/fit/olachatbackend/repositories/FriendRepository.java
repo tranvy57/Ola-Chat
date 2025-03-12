@@ -16,6 +16,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.olachatbackend.entities.Friend;
 
+import java.util.List;
+
 @Repository
 public interface FriendRepository extends JpaRepository<Friend, Long> {
+    List<Friend> findByUser_IdOrFriend_Id(String userId1, String userId2);
 }
