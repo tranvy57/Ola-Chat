@@ -1,4 +1,16 @@
+/*
+ * @ (#) User.java       1.0     14/02/2025
+ *
+ * Copyright (c) 2025 IUH. All rights reserved.
+ */
+
 package vn.edu.iuh.fit.olachatbackend.entities;
+/*
+ * @description:
+ * @author: Nguyen Thanh Nhut
+ * @date: 14/02/2025
+ * @version:    1.0
+ */
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,45 +18,39 @@ import lombok.experimental.FieldDefaults;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 
-import java.time.LocalDate;
-import java.util.Date;
-
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
+@Table(name = "user")
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String userId;
-
-    String email;
-    String phone;
-    String username;
-    String password;
-    String displayName;
-    String avatar;
-    Date dob;
+    private String id;
+    private String username;
+    private String password;
+    private String displayName;
+    private String email;
+    private String avatar;
+    private LocalDateTime dob;
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
 
     @Enumerated(EnumType.STRING)
-    UserStatus status;
+    private Role role;
 
-    @Enumerated(EnumType.STRING)
-    Role role;
-
-    LocalDate createdAt;
-
-    LocalDate updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDate.now();
-        this.updatedAt = LocalDate.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
         if (this.status == null) {
             this.status = UserStatus.ACTIVE;
         }
@@ -52,9 +58,6 @@ public class User {
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDate.now();
+        this.updatedAt = LocalDateTime.now();
     }
-
-
-    }
-
+}

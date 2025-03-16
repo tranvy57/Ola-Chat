@@ -1,17 +1,29 @@
+/*
+ * @ (#) Friend.java       1.0     14/02/2025
+ *
+ * Copyright (c) 2025 IUH. All rights reserved.
+ */
+
 package vn.edu.iuh.fit.olachatbackend.entities;
+/*
+ * @description:
+ * @author: Nguyen Thanh Nhut
+ * @date: 14/02/2025
+ * @version:    1.0
+ */
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "friends")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class Friend {
@@ -27,10 +39,14 @@ public class Friend {
     @JoinColumn(name = "friend_id")
     private User friend;
 
-    private LocalDate friendSince;
+    @Enumerated(EnumType.STRING)
+    private FriendStatus status;
+    private LocalDateTime friendSince;
+    private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
-        this.friendSince = LocalDate.now();
+        this.friendSince = LocalDateTime.now();
     }
+
 }

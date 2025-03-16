@@ -12,8 +12,15 @@ package vn.edu.iuh.fit.olachatbackend.enums;
  * @version:    1.0
  */
 
+import lombok.Getter;
+
+@Getter
 public enum MessageStatus {
-    SENT,
-    RECEIVED,
-    DELIVERED
+    SENT("SENT") ,RECEIVED("RECEIVED"), DELIVERED("DELIVERED");
+
+    private final String value;
+
+    private MessageStatus(String value) {
+        this.value = value;
+    }
 }

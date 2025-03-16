@@ -11,6 +11,7 @@ import vn.edu.iuh.fit.olachatbackend.entities.User;
 public interface UserMapper {
     @Mapping(target = "role", source = "role")
     @Mapping(target = "status", source = "status")
+    @Mapping(target = "userId", source = "id")
     UserResponse toUserResponse(User user);
 
     @Mapping(target = "role", source = "role")

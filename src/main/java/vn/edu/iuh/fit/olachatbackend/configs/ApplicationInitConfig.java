@@ -6,11 +6,15 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
+import vn.edu.iuh.fit.olachatbackend.repositories.ConversationRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
+
+import java.time.LocalDateTime;
 
 @Configuration
 public class ApplicationInitConfig {
@@ -35,7 +39,7 @@ public class ApplicationInitConfig {
         };
     }
 
-    @Bean
+//    @Bean
     CommandLineRunner initData(MessageRepository messageRepository) {
         return args -> {
             if (messageRepository.count() == 0) {
@@ -45,6 +49,23 @@ public class ApplicationInitConfig {
 
                 messageRepository.save(message);
                 System.out.println("Inserted a test message into MongoDB!");
+            }
+        };
+    }
+
+//    @Bean
+    CommandLineRunner initDataConversation(ConversationRepository conversationRepository
+    ) {
+        return args -> {
+            if (conversationRepository.count() == 0) {
+                Conversation conversation = Conversation.builder()
+                        .name("Test")
+                        .avatar("abc")
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                conversationRepository.save(conversation);
+                System.out.println("Inserted a test conversation into MongoDB!");
             }
         };
     }

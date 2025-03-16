@@ -1,61 +1,38 @@
-package vn.edu.iuh.fit.olachatbackend.services;
+/*
+ * @ (#) UserService.java       1.0     14/02/2025
+ *
+ * Copyright (c) 2025 IUH. All rights reserved.
+ */
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
+package vn.edu.iuh.fit.olachatbackend.services;
+/*
+ * @description:
+ * @author: Nguyen Thanh Nhut
+ * @date: 14/02/2025
+ * @version:    1.0
+ */
+
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
-import vn.edu.iuh.fit.olachatbackend.exceptions.ErrorMessageDto;
-import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
-import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
-import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 
-@Service
-public class UserService {
-    @Autowired
-    private UserRepository userRepository;
+public interface UserService {
+    User saveUser(User user);
 
-    @Autowired
-    private UserMapper userMapper;
+    Optional<User> getUserById(String id);
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    List<User> findAll();
 
-    public List<UserResponse> getUsers() {
-        UserResponse userResponse = new UserResponse();
-        userResponse = userMapper.toUserResponse(userRepository.findAll().get(0));
-        return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
-    }
+    List<UserResponse> getUsers();
 
-    public UserResponse registerUser(UserRegisterRequest request){
-        String username = request.getUsername();
-        if (userRepository.existsByUsername(username)) {
-            throw new InternalServerErrorException("Tên đăng nhập đã tồn tại");
-        }
-        User user = userMapper.toUser(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        return userMapper.toUserResponse(userRepository.save(user));
-    }
+    UserResponse registerUser(UserRegisterRequest request);
 
+    UserResponse getMyInfo();
 
-    public UserResponse getMyInfo() {
-        var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
+    void deleteUser(String userId);
 
-        User user = userRepository.findByUsername(name)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
-
-        return userMapper.toUserResponse(user);
-    }
-
-
-    public void deleteUser(String userId) {
-        userRepository.deleteById(userId);
-    }
+    List<UserResponse> getUsersByConversationId(String conversationId);
 }
