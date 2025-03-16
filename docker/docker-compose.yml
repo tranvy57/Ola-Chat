@@ -4,7 +4,6 @@ services:
   #   image: nginx
   #   ports:
   #    - "8080:80"
-
   mysql:
     image: mysql:8.0.39
     container_name: mysql-ola-chat-db
