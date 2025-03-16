@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 
 @Document
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

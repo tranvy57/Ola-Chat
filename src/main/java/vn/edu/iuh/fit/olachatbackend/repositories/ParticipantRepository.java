@@ -18,9 +18,15 @@ import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.olachatbackend.entities.Participant;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ParticipantRepository extends MongoRepository<Participant, ObjectId> {
     List<Participant> findByUserId(String userId);
     List<Participant> findParticipantByConversationId(ObjectId conversationId);
+    Optional<Participant> findByConversationIdAndUserId(ObjectId groupId, String userId);
+    void deleteByConversationId(ObjectId groupId);
+    boolean existsByConversationIdAndUserId(ObjectId groupId, String userId);
+
+    List<Participant> findByConversationId(ObjectId groupId);
 }
