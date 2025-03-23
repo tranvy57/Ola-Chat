@@ -9,25 +9,26 @@ server:
 
 spring:
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3307/ola-chat?createDatabaseIfNotExist=true
+    url: jdbc:mysql://tramway.proxy.rlwy.net:13286/railway
     username: root
-    password: root
+    password: yzVnFnkUwYqDCCYOFFHREvrCzTRkbswj
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
-    show-sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
 
   data:
     mongodb:
       uri: mongodb+srv://mongodb:mongopassword@ola-cluster.2db1h.mongodb.net/?retryWrites=true&w=majority&appName=ola-chat-db
       database: ola-chat
     redis:
-      host: localhost
-      port: 6379
-      password:
-      timeout: 60000
+      host: maglev.proxy.rlwy.net
+      port: 30825
+      username: default
+      password: RyTQwEZwwUnrJcNObOxamkGOSwoUnNBl
+      ssl:
+        enabled: true
 
 cloudinary:
   cloud_name: dwip7dplu
