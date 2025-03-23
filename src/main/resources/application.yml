@@ -28,6 +28,17 @@ spring:
       port: 6379
       password:
       timeout: 60000
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tieuvy5723@gmail.com
+    password: vpxr knjx eyrt frms
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 cloudinary:
   cloud_name: dwip7dplu

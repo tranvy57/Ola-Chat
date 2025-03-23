@@ -4,10 +4,7 @@ import com.nimbusds.jose.JOSEException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
@@ -59,6 +56,14 @@ public class AuthController {
         return ResponseEntity.ok(MessageResponse.<AuthenticationResponse>builder()
                 .message("Làm mới token thành công")
                 .data(result)
+                .build());
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> sendOtp(@RequestParam String email) {
+        authenticationService.processForgotPassword(email);
+        return ResponseEntity.ok(MessageResponse.builder()
+                .message("Làm mới token thành công")
                 .build());
     }
 
