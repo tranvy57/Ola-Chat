@@ -1,5 +1,6 @@
 package vn.edu.iuh.fit.olachatbackend.configs;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.CommandLineRunner;
@@ -17,12 +18,13 @@ import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import java.time.LocalDateTime;
 
 @Configuration
+@RequiredArgsConstructor
 public class ApplicationInitConfig {
 
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    @Bean
+//    @Bean
     ApplicationRunner applicationRunner(UserRepository userRepository) { // Được khởi chạy mỗi khi application start
         return args -> {
             // tạo một user admin

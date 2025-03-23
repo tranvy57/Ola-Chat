@@ -9,15 +9,14 @@ server:
 
 spring:
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3307/ola-chat?createDatabaseIfNotExist=true
+    url: jdbc:mysql://tramway.proxy.rlwy.net:13286/railway
     username: root
-    password: root
+    password: yzVnFnkUwYqDCCYOFFHREvrCzTRkbswj
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
-    show-sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
 
   data:
     mongodb:
@@ -28,6 +27,13 @@ spring:
       port: 6379
       password:
       timeout: 60000
+#    redis:
+#      host: maglev.proxy.rlwy.net
+#      port: 30825
+#      username: default
+#      password: RyTQwEZwwUnrJcNObOxamkGOSwoUnNBl
+#      ssl:
+#        enabled: true
 
 cloudinary:
   cloud_name: dwip7dplu
@@ -38,3 +44,7 @@ jwt:
   signerKey: zhRPPUbgnHMtrH0Fj3reft+wa6HFXDlcwSNbTPEA3cQUdCb4aXANrlQntnH1QAYc
   valid-duration: 3600
   refreshable-duration: 36000
+
+
+google:
+  client-id: 45263756239-gego0gvi3fpc5f4flplmipl410vf35hp.apps.googleusercontent.com
