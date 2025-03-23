@@ -30,7 +30,7 @@ public class SecurityConfig {
             "/auth/refresh", "/users/**", "/v3/api-docs/**", "/swagger-ui/**",
             "/api/conversations", "/api/conversations/**", "/api/users/**", "/api/messages", "/ws", "/ws/**", "/user/**", "/app/**",
             "/api/groups", "/api/groups/**",
-            "/auth/**"
+            "/auth/**", "/api/users/me"
 
     };
 
