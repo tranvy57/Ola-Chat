@@ -18,13 +18,12 @@ import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import java.time.LocalDateTime;
 
 @Configuration
-@RequiredArgsConstructor
 public class ApplicationInitConfig {
 
     @Autowired
     PasswordEncoder passwordEncoder;
 
-//    @Bean
+    @Bean
     ApplicationRunner applicationRunner(UserRepository userRepository) { // Được khởi chạy mỗi khi application start
         return args -> {
             // tạo một user admin

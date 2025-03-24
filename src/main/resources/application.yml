@@ -9,9 +9,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://tramway.proxy.rlwy.net:13286/railway
+    url: jdbc:mysql://yamabiko.proxy.rlwy.net:23769/railway
     username: root
-    password: yzVnFnkUwYqDCCYOFFHREvrCzTRkbswj
+    password: PhebhloJhVHvParqlvvXXafFkRHEDSBj
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
@@ -48,3 +48,6 @@ jwt:
 
 google:
   client-id: 45263756239-gego0gvi3fpc5f4flplmipl410vf35hp.apps.googleusercontent.com
+facebook:
+  client-id: 1305964487147806
+  client-secret: 18270cccad0551a87941a25cf8bf56b0

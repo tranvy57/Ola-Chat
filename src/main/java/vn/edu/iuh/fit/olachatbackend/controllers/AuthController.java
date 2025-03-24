@@ -42,6 +42,16 @@ public class AuthController {
                 .build();
     }
 
+    @PostMapping("/login/facebook")
+    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request) {
+        String accessToken = request.get("accessToken");
+        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
+                .build();
+    }
+
     @PostMapping("/introspect")
     MessageResponse<IntrospectResponse> authenticate(@RequestBody IntrospectRequest request)
             throws ParseException, JOSEException {

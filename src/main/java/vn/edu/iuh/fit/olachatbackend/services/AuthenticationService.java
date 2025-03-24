@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
@@ -44,7 +45,6 @@ import java.util.*;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
@@ -52,8 +52,17 @@ public class AuthenticationService {
     @Autowired
     private RedisService redisService;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     @Value("${google.client-id}")
     private String googleClientId;
+
+    @Value("${facebook.client-id}")
+    private String facebookClientId;
+
+    @Value("${facebook.client-secret}")
+    private String facebookClientSecret;
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -217,7 +226,7 @@ public class AuthenticationService {
     public AuthenticationResponse loginWithGoogle(String idToken) {
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
-//                    .setAudience(Collections.singletonList(googleClientId))
+                    .setAudience(Collections.singletonList(googleClientId))
                     .build();
 
             GoogleIdToken googleIdToken = verifier.verify(idToken);
@@ -245,6 +254,32 @@ public class AuthenticationService {
         }
     }
 
+    public AuthenticationResponse loginWithFacebook(String accessToken) {
+        try {
+            String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + accessToken;
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new UnauthorizedException("Token không hợp lệ");
+            }
+
+            // Lấy dữ liệu từ Facebook API
+            Map<String, Object> data = response.getBody();
+            String facebookId = (String) data.get("id");
+            String name = (String) data.get("name");
+            String email = (String) data.get("email");
+            String picture = ((Map<String, Object>) data.get("picture")).get("data").toString();
+
+            // Kiểm tra hoặc tạo người dùng mới
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
+
+            return new AuthenticationResponse(generateToken(user), true);
+        } catch (Exception e) {
+            throw new UnauthorizedException("Lỗi xác thực Facebook");
+        }
+    }
+
     private User createGoogleUser(String email, String name, String picture) {
         User user = User.builder()
                 .email(email)
@@ -252,6 +287,20 @@ public class AuthenticationService {
                 .displayName(name)
                 .avatar(picture)
                 .authProvider(AuthProvider.GOOGLE)
+                .status(UserStatus.ACTIVE)
+                .role(Role.USER)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return userRepository.save(user);
+    }
+
+    private User createFacebookUser(String email, String name, String picture, String facebookId) {
+        User user = User.builder()
+                .email(email)
+                .username(email)
+                .displayName(name)
+                .avatar(picture)
+                .authProvider(AuthProvider.FACEBOOK)
                 .status(UserStatus.ACTIVE)
                 .role(Role.USER)
                 .createdAt(LocalDateTime.now())
