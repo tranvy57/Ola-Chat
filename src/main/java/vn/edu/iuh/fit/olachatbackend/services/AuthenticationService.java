@@ -55,8 +55,11 @@ public class AuthenticationService {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${google.client-id}")
+    @Value("${google.googleClientId}")
     private String googleClientId;
+
+    @Value("${google.androidClientId}")
+    private String androidClientId;
 
     @Value("${facebook.client-id}")
     private String facebookClientId;
@@ -226,7 +229,7 @@ public class AuthenticationService {
     public AuthenticationResponse loginWithGoogle(String idToken) {
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
-                    .setAudience(Collections.singletonList(googleClientId))
+                    .setAudience(Arrays.asList(googleClientId, androidClientId))
                     .build();
 
             GoogleIdToken googleIdToken = verifier.verify(idToken);
@@ -268,7 +271,7 @@ public class AuthenticationService {
             String facebookId = (String) data.get("id");
             String name = (String) data.get("name");
             String email = (String) data.get("email");
-            String picture = ((Map<String, Object>) data.get("picture")).get("data").toString();
+            String picture = (String) ((Map<String, Object>) ((Map<String, Object>) data.get("picture")).get("data")).get("url");
 
             // Kiểm tra hoặc tạo người dùng mới
             User user = userRepository.findByEmail(email)

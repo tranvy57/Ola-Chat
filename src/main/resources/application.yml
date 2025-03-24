@@ -47,7 +47,9 @@ jwt:
 
 
 google:
-  client-id: 45263756239-gego0gvi3fpc5f4flplmipl410vf35hp.apps.googleusercontent.com
+#  client-id: 45263756239-gego0gvi3fpc5f4flplmipl410vf35hp.apps.googleusercontent.com
+  googleClientId: 714231235616-gorl6sl5fja3tgja1pfl9la9qd3b9orf.apps.googleusercontent.com
+  androidClientId: 714231235616-baubhlnvjrkfgt1k09dlchf7meiuj7s7.apps.googleusercontent.com
 facebook:
   client-id: 1305964487147806
   client-secret: 18270cccad0551a87941a25cf8bf56b0
