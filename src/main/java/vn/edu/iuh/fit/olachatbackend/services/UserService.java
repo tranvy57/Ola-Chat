@@ -12,10 +12,12 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import com.nimbusds.jose.JOSEException;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 
+import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,4 +37,7 @@ public interface UserService {
     void deleteUser(String userId);
 
     List<UserResponse> getUsersByConversationId(String conversationId);
+
+    UserResponse getMyInfo(String token);
+
 }
