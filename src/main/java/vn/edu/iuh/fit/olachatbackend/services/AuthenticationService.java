@@ -9,6 +9,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
+import vn.edu.iuh.fit.olachatbackend.entities.RefreshToken;
 import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
@@ -37,6 +40,7 @@ import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.repositories.RefreshTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +56,9 @@ import java.util.*;
 public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
     @Autowired
     private RedisService redisService;
     @Autowired
@@ -103,7 +110,7 @@ public class AuthenticationService {
                 .build();
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         var user = userRepository
                 .findByUsername(request.getUsername())
@@ -113,9 +120,28 @@ public class AuthenticationService {
 
         if (!authenticated) throw new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu");
 
-        var token = generateToken(user);
+        String deviceId = request.getDeviceId();
 
-        return AuthenticationResponse.builder().token(token).authenticated(true).build();
+        var accessToken = generateToken(user, deviceId, false); // 🔥 Sửa tại đây (Dùng chung hàm generateToken)
+        var refreshToken = generateToken(user, deviceId, true); // 🔥 Sửa tại đây
+
+        // Lưu refresh token vào DB (mã hóa)
+        RefreshToken refreshTokenEntity = new RefreshToken();
+        refreshTokenEntity.setTokenHash(passwordEncoder.encode(refreshToken)); // Lưu dạng hash
+        refreshTokenEntity.setDeviceId(deviceId);
+        refreshTokenEntity.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
+        refreshTokenEntity.setUser(user);
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        // 🔥 Thêm refresh token vào HTTP-only cookie
+        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(refreshTokenCookie);
+
+        return AuthenticationResponse.builder().token(accessToken).authenticated(true).build();
     }
 
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
@@ -136,45 +162,56 @@ public class AuthenticationService {
         }
     }
 
-    public AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException {
+    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
         var signedJWT = verifyToken(request.getToken(), true);
 
-        var jit = signedJWT.getJWTClaimsSet().getJWTID();
-        var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-        InvalidatedToken invalidatedToken =
-                InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
-
-//        invalidatedTokenRepository.save(invalidatedToken);
-
-        if (redisService.isTokenInvalidated(jit)) {
-            throw new UnauthorizedException("Token đã bị vô hiệu hóa");
-        }
-
         var username = signedJWT.getJWTClaimsSet().getSubject();
+        var deviceId = signedJWT.getJWTClaimsSet().getStringClaim("deviceId");
 
-        var user =
-                userRepository.findByUsername(username).orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
 
-        var token = generateToken(user);
+        var newAccessToken = generateToken(user, deviceId, false);
+        var newRefreshToken = generateToken(user, deviceId, true);
 
-        return AuthenticationResponse.builder().token(token).authenticated(true).build();
+        // Cập nhật refresh token mới vào DB
+        var passwordEncoder = new BCryptPasswordEncoder(10);
+        RefreshToken refreshTokenEntity = new RefreshToken();
+        refreshTokenEntity.setTokenHash(passwordEncoder.encode(newRefreshToken));
+        refreshTokenEntity.setDeviceId(deviceId);
+        refreshTokenEntity.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
+        refreshTokenEntity.setUser(user);
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        //  Cập nhật refresh token mới vào cookie
+        Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(refreshTokenCookie);
+
+        return AuthenticationResponse.builder().token(newAccessToken).authenticated(true).build();
     }
 
-    private String generateToken(User user) {
+    private String generateToken(User user, String deviceId, boolean isRefreshToken) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+        Instant now = Instant.now();
+        long duration = isRefreshToken ? REFRESHABLE_DURATION : VALID_DURATION;
+        Date expiryDate = Date.from(now.plus(duration, ChronoUnit.SECONDS));
+
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("zycute")
-                .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .issueTime(Date.from(now))
+                .expirationTime(expiryDate)
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
+                .claim("deviceId", deviceId)
                 .build();
 
-        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+        Payload payload = new Payload(claimsSet.toJSONObject());
 
         JWSObject jwsObject = new JWSObject(header, payload);
 
@@ -231,90 +268,90 @@ public class AuthenticationService {
         return "ROLE_" + user.getRole().name();
     }
 
-    public AuthenticationResponse loginWithGoogle(String idToken) {
-        try {
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
-                    .setAudience(Arrays.asList(googleClientId, androidClientId))
-                    .build();
-
-            GoogleIdToken googleIdToken = verifier.verify(idToken);
-            if (googleIdToken == null) {
-                throw new UnauthorizedException("Invalid ID token");
-            }
-
-            // Lấy thông tin người dùng từ payload
-            GoogleIdToken.Payload payload = googleIdToken.getPayload();
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            String picture = (String) payload.get("picture");
-
-            // Kiểm tra hoặc tạo người dùng
-            User user = userRepository.findByEmail(email)
-                    .orElseGet(() -> createGoogleUser(email, name, picture));
-
-            if (user.getAuthProvider() != AuthProvider.GOOGLE) {
-                throw new ConflicException("Email already exists with different provider");
-            }
-
-            return new AuthenticationResponse(generateToken(user), true);
-        } catch (Exception e) {
-            throw new InternalServerErrorException("Error verifying token: " + e.getMessage());
-        }
-    }
-
-    public AuthenticationResponse loginWithFacebook(String accessToken) {
-        try {
-            String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + accessToken;
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new UnauthorizedException("Token không hợp lệ");
-            }
-
-            // Lấy dữ liệu từ Facebook API
-            Map<String, Object> data = response.getBody();
-            String facebookId = (String) data.get("id");
-            String name = (String) data.get("name");
-            String email = (String) data.get("email");
-            String picture = (String) ((Map<String, Object>) ((Map<String, Object>) data.get("picture")).get("data")).get("url");
-
-            // Kiểm tra hoặc tạo người dùng mới
-            User user = userRepository.findByEmail(email)
-                    .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
-
-            return new AuthenticationResponse(generateToken(user), true);
-        } catch (Exception e) {
-            throw new UnauthorizedException("Lỗi xác thực Facebook");
-        }
-    }
-
-    private User createGoogleUser(String email, String name, String picture) {
-        User user = User.builder()
-                .email(email)
-                .username(email) // Dùng email làm username
-                .displayName(name)
-                .avatar(picture)
-                .authProvider(AuthProvider.GOOGLE)
-                .status(UserStatus.ACTIVE)
-                .role(Role.USER)
-                .createdAt(LocalDateTime.now())
-                .build();
-        return userRepository.save(user);
-    }
-
-    private User createFacebookUser(String email, String name, String picture, String facebookId) {
-        User user = User.builder()
-                .email(email)
-                .username(email)
-                .displayName(name)
-                .avatar(picture)
-                .authProvider(AuthProvider.FACEBOOK)
-                .status(UserStatus.ACTIVE)
-                .role(Role.USER)
-                .createdAt(LocalDateTime.now())
-                .build();
-        return userRepository.save(user);
-    }
+//    public AuthenticationResponse loginWithGoogle(String idToken) {
+//        try {
+//            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+//                    .setAudience(Arrays.asList(googleClientId, androidClientId))
+//                    .build();
+//
+//            GoogleIdToken googleIdToken = verifier.verify(idToken);
+//            if (googleIdToken == null) {
+//                throw new UnauthorizedException("Invalid ID token");
+//            }
+//
+//            // Lấy thông tin người dùng từ payload
+//            GoogleIdToken.Payload payload = googleIdToken.getPayload();
+//            String email = payload.getEmail();
+//            String name = (String) payload.get("name");
+//            String picture = (String) payload.get("picture");
+//
+//            // Kiểm tra hoặc tạo người dùng
+//            User user = userRepository.findByEmail(email)
+//                    .orElseGet(() -> createGoogleUser(email, name, picture));
+//
+//            if (user.getAuthProvider() != AuthProvider.GOOGLE) {
+//                throw new ConflicException("Email already exists with different provider");
+//            }
+//
+//            return new AuthenticationResponse(generateToken(user), true);
+//        } catch (Exception e) {
+//            throw new InternalServerErrorException("Error verifying token: " + e.getMessage());
+//        }
+//    }
+//
+//    public AuthenticationResponse loginWithFacebook(String accessToken) {
+//        try {
+//            String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + accessToken;
+//            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+//
+//            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+//                throw new UnauthorizedException("Token không hợp lệ");
+//            }
+//
+//            // Lấy dữ liệu từ Facebook API
+//            Map<String, Object> data = response.getBody();
+//            String facebookId = (String) data.get("id");
+//            String name = (String) data.get("name");
+//            String email = (String) data.get("email");
+//            String picture = (String) ((Map<String, Object>) ((Map<String, Object>) data.get("picture")).get("data")).get("url");
+//
+//            // Kiểm tra hoặc tạo người dùng mới
+//            User user = userRepository.findByEmail(email)
+//                    .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
+//
+//            return new AuthenticationResponse(generateToken(user), true);
+//        } catch (Exception e) {
+//            throw new UnauthorizedException("Lỗi xác thực Facebook");
+//        }
+//    }
+//
+//    private User createGoogleUser(String email, String name, String picture) {
+//        User user = User.builder()
+//                .email(email)
+//                .username(email) // Dùng email làm username
+//                .displayName(name)
+//                .avatar(picture)
+//                .authProvider(AuthProvider.GOOGLE)
+//                .status(UserStatus.ACTIVE)
+//                .role(Role.USER)
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//        return userRepository.save(user);
+//    }
+//
+//    private User createFacebookUser(String email, String name, String picture, String facebookId) {
+//        User user = User.builder()
+//                .email(email)
+//                .username(email)
+//                .displayName(name)
+//                .avatar(picture)
+//                .authProvider(AuthProvider.FACEBOOK)
+//                .status(UserStatus.ACTIVE)
+//                .role(Role.USER)
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//        return userRepository.save(user);
+//    }
 
     public void processForgotPassword(String email) {
         Optional<User> user = userRepository.findByEmail(email);
