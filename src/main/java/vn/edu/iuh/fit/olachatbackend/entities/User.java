@@ -38,6 +38,7 @@ public class User {
 
     @Column(unique = true)
     private String email;
+    @Column(length = 1000)
     private String avatar;
     private LocalDateTime dob;
     @Enumerated(EnumType.STRING)
