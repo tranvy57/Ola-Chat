@@ -31,5 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
 # Bỏ qua Docker và env
 .env
