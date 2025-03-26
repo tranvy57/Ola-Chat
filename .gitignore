@@ -33,4 +33,3 @@ build/
 .vscode/
 # Bỏ qua Docker và env
 .env
-docker/
