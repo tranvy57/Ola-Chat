@@ -27,11 +27,15 @@ public class RedisService {
     private static final long OTP_EXPIRE_SECONDS = 300; // 5 phút
 
     public void saveOtp(String email, String otpCode) {
-        redisTemplate.opsForValue().set("OTP:" + email, otpCode, OTP_EXPIRE_SECONDS, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set("OTP" + email, otpCode, OTP_EXPIRE_SECONDS, TimeUnit.SECONDS);
     }
 
     public String getOtp(String email) {
-        return redisTemplate.opsForValue().get("OTP:" + email);
+        String key = "OTP" + email;
+        System.out.println("🔍 Đang lấy OTP với key: " + key);
+        System.out.println(redisTemplate.opsForValue().get("vy"));
+        return redisTemplate.opsForValue().get(key);
+
     }
 
     public void deleteOtp(String email) {

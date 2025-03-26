@@ -5,6 +5,7 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
@@ -23,7 +23,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -34,16 +34,14 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private RedisService redisService;
-
     @Autowired
     private EmailService emailService;
-
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -217,9 +215,13 @@ public class AuthenticationService {
         emailService.sendOtpEmail(email, otpCode);
     }
 
-    public void verifyOTP(OTPRequest otpRequest) {
+    public void resetPassword(ResetPasswordRequest otpRequest) {
         String otp = otpRequest.getOtp();
         String email = otpRequest.getEmail();
+        String newPassword = otpRequest.getNewPassword();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Người dùng không tồn tại."));
 
         String storedOtp = redisService.getOtp(email);
         if (storedOtp == null) {
@@ -230,7 +232,14 @@ public class AuthenticationService {
             throw new BadRequestException("OTP không hợp lệ. Vui lòng thử lại.");
         }
 
-        // OTP hợp lệ -> Xóa khỏi Redis
+
+
+
+        // Cập nhật mật khẩu mới
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
         redisService.deleteOtp(email);
 
     }

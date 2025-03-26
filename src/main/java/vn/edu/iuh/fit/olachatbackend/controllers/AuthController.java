@@ -64,11 +64,11 @@ public class AuthController {
                 .build());
     }
 
-    @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody OTPRequest otpRequest) {
-        authenticationService.verifyOTP(otpRequest);
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> verifyOtp(@RequestBody ResetPasswordRequest otpRequest) {
+        authenticationService.resetPassword(otpRequest);
         return ResponseEntity.ok(MessageResponse.builder()
-                .message("Xác minh OTP thành công. Bạn có thể đặt lại mật khẩu.")
+                .message("Reset mật khẩu thành công.")
                 .build());
     }
 
