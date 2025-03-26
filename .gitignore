@@ -31,4 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
-/docker/data
+# Bỏ qua Docker và env
+.env
+docker/
