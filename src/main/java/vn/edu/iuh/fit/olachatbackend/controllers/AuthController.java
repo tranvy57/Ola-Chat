@@ -5,11 +5,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
@@ -64,6 +61,14 @@ public class AuthController {
         authenticationService.processForgotPassword(email);
         return ResponseEntity.ok(MessageResponse.builder()
                 .message("Đã gửi OPT về mail của bạn, vui lòng kiểm tra.")
+                .build());
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody OTPRequest otpRequest) {
+        authenticationService.verifyOTP(otpRequest);
+        return ResponseEntity.ok(MessageResponse.builder()
+                .message("Xác minh OTP thành công. Bạn có thể đặt lại mật khẩu.")
                 .build());
     }
 

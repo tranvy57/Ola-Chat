@@ -13,14 +13,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
@@ -217,5 +215,23 @@ public class AuthenticationService {
         redisService.saveOtp(email, otpCode);
 
         emailService.sendOtpEmail(email, otpCode);
+    }
+
+    public void verifyOTP(OTPRequest otpRequest) {
+        String otp = otpRequest.getOtp();
+        String email = otpRequest.getEmail();
+
+        String storedOtp = redisService.getOtp(email);
+        if (storedOtp == null) {
+            throw new NotFoundException("OTP đã hết hạn hoặc không tồn tại.");
+        }
+
+        if (!storedOtp.equals(otp)) {
+            throw new BadRequestException("OTP không hợp lệ. Vui lòng thử lại.");
+        }
+
+        // OTP hợp lệ -> Xóa khỏi Redis
+        redisService.deleteOtp(email);
+
     }
 }
