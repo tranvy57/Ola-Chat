@@ -8,11 +8,26 @@ server:
         max-http-header-size: 64KB
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 465
+    username: tieuvy5723@gmail.com
+    password: fbjj qdvu xskr xzgv
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.starttls.enable: false
+
   datasource:
-    url: jdbc:mysql://tramway.proxy.rlwy.net:13286/railway
+#    url: jdbc:mysql://tramway.proxy.rlwy.net:13286/railway
+#    username: root
+#    password: yzVnFnkUwYqDCCYOFFHREvrCzTRkbswj
+
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/ola-chat?createDatabaseIfNotExist=true
+
     username: root
-    password: yzVnFnkUwYqDCCYOFFHREvrCzTRkbswj
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: root
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
@@ -22,13 +37,21 @@ spring:
     mongodb:
       uri: mongodb+srv://mongodb:mongopassword@ola-cluster.2db1h.mongodb.net/?retryWrites=true&w=majority&appName=ola-chat-db
       database: ola-chat
+#    redis:
+#      host: maglev.proxy.rlwy.net
+#      port: 30825
+#      username: default
+#      password: RyTQwEZwwUnrJcNObOxamkGOSwoUnNBl
+#      ssl:
+#        enabled: true
     redis:
-      host: maglev.proxy.rlwy.net
-      port: 30825
-      username: default
-      password: RyTQwEZwwUnrJcNObOxamkGOSwoUnNBl
-      ssl:
-        enabled: true
+      host: localhost
+      port: 6379
+      password:
+      timeout: 60000
+
+
+
 
 cloudinary:
   cloud_name: dwip7dplu

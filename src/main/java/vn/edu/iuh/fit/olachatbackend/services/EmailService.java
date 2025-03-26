@@ -1,30 +1,26 @@
 package vn.edu.iuh.fit.olachatbackend.services;
 
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Slf4j
 public class EmailService {
     @Autowired
-    private JavaMailSender mailSender;
+    private JavaMailSender emailSender;
 
-    public void sendOtpEmail(String toEmail, String otpCode) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(toEmail);
-            message.setSubject("Reset Password - OTP Verification");
-            message.setText("Your OTP code is: " + otpCode + "\nThis code will expire in 5 minutes.");
-
-            mailSender.send(message);
-            log.info("✅ Email OTP đã gửi thành công đến: {}", toEmail);
-        } catch (MailException e) {
-            log.error("❌ Gửi email thất bại: {}", e.getMessage());
-            throw new RuntimeException("Lỗi khi gửi email. Vui lòng thử lại!");
-        }
+    public void sendOtpEmail(
+            String email, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("tieuvy5723@gmail.com");
+        message.setTo(email);
+        message.setSubject("Reset Password - OTP Verification");
+        message.setText("OPT của bạn là: " + otp + ".OTP này sẽ hết hạn trong 5 phút.");
+        emailSender.send(message);
     }
 }

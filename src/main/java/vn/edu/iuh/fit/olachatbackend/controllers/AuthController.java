@@ -63,7 +63,7 @@ public class AuthController {
     public ResponseEntity<?> sendOtp(@RequestParam String email) {
         authenticationService.processForgotPassword(email);
         return ResponseEntity.ok(MessageResponse.builder()
-                .message("Làm mới token thành công")
+                .message("Đã gửi OPT về mail của bạn, vui lòng kiểm tra.")
                 .build());
     }
 

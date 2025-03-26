@@ -62,7 +62,7 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/myInfo")
+    @GetMapping("/my-info")
     public MessageResponse<UserResponse> getMyInfo() {
         return MessageResponse.<UserResponse>builder()
                 .message("Lấy thông tin cá nhân thành công")

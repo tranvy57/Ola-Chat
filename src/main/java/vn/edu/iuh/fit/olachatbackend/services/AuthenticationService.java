@@ -209,7 +209,7 @@ public class AuthenticationService {
     public void processForgotPassword(String email) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isEmpty()) {
-            throw new NotFoundException("Email không tồn tại");
+            throw new NotFoundException("User không tồn tại");
         }
 
         String otpCode = OtpUtils.generateOtp();
