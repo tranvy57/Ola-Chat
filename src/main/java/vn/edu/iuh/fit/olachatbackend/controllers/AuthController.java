@@ -4,20 +4,15 @@ import com.nimbusds.jose.JOSEException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
 
 import java.text.ParseException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -31,6 +26,26 @@ public class AuthController {
         return MessageResponse.<AuthenticationResponse>builder()
                 .message("Đăng nhập thành công")
                 .data(result)
+                .build();
+    }
+
+    @PostMapping("/login/google")
+    public MessageResponse<AuthenticationResponse> googleLogin(@RequestBody Map<String, String> request) {
+        String idToken = request.get("idToken");
+        AuthenticationResponse response = authenticationService.loginWithGoogle(idToken);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
+                .build();
+    }
+
+    @PostMapping("/login/facebook")
+    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request) {
+        String accessToken = request.get("accessToken");
+        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
                 .build();
     }
 
@@ -59,6 +74,22 @@ public class AuthController {
         return ResponseEntity.ok(MessageResponse.<AuthenticationResponse>builder()
                 .message("Làm mới token thành công")
                 .data(result)
+                .build());
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> sendOtp(@RequestParam String email) {
+        authenticationService.processForgotPassword(email);
+        return ResponseEntity.ok(MessageResponse.builder()
+                .message("Đã gửi OPT về mail của bạn, vui lòng kiểm tra.")
+                .build());
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> verifyOtp(@RequestBody ResetPasswordRequest otpRequest) {
+        authenticationService.resetPassword(otpRequest);
+        return ResponseEntity.ok(MessageResponse.builder()
+                .message("Reset mật khẩu thành công.")
                 .build());
     }
 

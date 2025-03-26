@@ -15,6 +15,7 @@ package vn.edu.iuh.fit.olachatbackend.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 
@@ -23,7 +24,6 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "user")
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -35,6 +35,8 @@ public class User {
     private String username;
     private String password;
     private String displayName;
+
+    @Column(unique = true)
     private String email;
     private String avatar;
     private LocalDateTime dob;
@@ -43,6 +45,10 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", length = 20)
+    private AuthProvider authProvider;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
