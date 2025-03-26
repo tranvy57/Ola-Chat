@@ -13,8 +13,6 @@ import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
@@ -67,6 +65,14 @@ public class UserController {
         return MessageResponse.<UserResponse>builder()
                 .message("Lấy thông tin cá nhân thành công")
                 .data(userService.getMyInfo())
+                .build();
+    }
+
+    @GetMapping("/me")
+    public MessageResponse<UserResponse> getMyInfo(@RequestHeader("Authorization") String token) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Lấy thông tin cá nhân thành công")
+                .data(userService.getMyInfo(token))
                 .build();
     }
 

@@ -12,6 +12,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
 
 import java.text.ParseException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -25,6 +26,26 @@ public class AuthController {
         return MessageResponse.<AuthenticationResponse>builder()
                 .message("Đăng nhập thành công")
                 .data(result)
+                .build();
+    }
+
+    @PostMapping("/login/google")
+    public MessageResponse<AuthenticationResponse> googleLogin(@RequestBody Map<String, String> request) {
+        String idToken = request.get("idToken");
+        AuthenticationResponse response = authenticationService.loginWithGoogle(idToken);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
+                .build();
+    }
+
+    @PostMapping("/login/facebook")
+    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request) {
+        String accessToken = request.get("accessToken");
+        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
                 .build();
     }
 
