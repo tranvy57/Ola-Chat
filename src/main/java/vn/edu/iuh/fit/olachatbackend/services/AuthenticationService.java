@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.*;
 import org.springframework.web.client.RestTemplate;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
@@ -29,28 +30,35 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
 import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
+import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
-
-
+import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -309,5 +317,47 @@ public class AuthenticationService {
                 .createdAt(LocalDateTime.now())
                 .build();
         return userRepository.save(user);
+    }
+
+    public void processForgotPassword(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
+            throw new NotFoundException("User không tồn tại");
+        }
+
+        String otpCode = OtpUtils.generateOtp();
+
+        redisService.saveOtp(email, otpCode);
+
+        emailService.sendOtpEmail(email, otpCode);
+    }
+
+    public void resetPassword(ResetPasswordRequest otpRequest) {
+        String otp = otpRequest.getOtp();
+        String email = otpRequest.getEmail();
+        String newPassword = otpRequest.getNewPassword();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Người dùng không tồn tại."));
+
+        String storedOtp = redisService.getOtp(email);
+        if (storedOtp == null) {
+            throw new NotFoundException("OTP đã hết hạn hoặc không tồn tại.");
+        }
+
+        if (!storedOtp.equals(otp)) {
+            throw new BadRequestException("OTP không hợp lệ. Vui lòng thử lại.");
+        }
+
+
+
+
+        // Cập nhật mật khẩu mới
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        redisService.deleteOtp(email);
+
     }
 }

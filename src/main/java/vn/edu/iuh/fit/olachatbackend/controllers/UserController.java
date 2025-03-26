@@ -7,11 +7,16 @@
 package vn.edu.iuh.fit.olachatbackend.controllers;
 
 import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.Friend;
+import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 
 import jakarta.validation.Valid;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
+import vn.edu.iuh.fit.olachatbackend.services.FriendService;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
 import java.util.List;
@@ -27,9 +32,11 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final FriendService friendService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, FriendService friendService) {
         this.userService = userService;
+        this.friendService = friendService;
     }
 
 //    @PostMapping
@@ -53,7 +60,7 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/myInfo")
+    @GetMapping("/my-info")
     public MessageResponse<UserResponse> getMyInfo() {
         return MessageResponse.<UserResponse>builder()
                 .message("Lấy thông tin cá nhân thành công")
@@ -66,6 +73,14 @@ public class UserController {
         return MessageResponse.<UserResponse>builder()
                 .message("Lấy thông tin cá nhân thành công")
                 .data(userService.getMyInfo(token))
+                .build();
+    }
+
+    @GetMapping("/my-friends")
+    public MessageResponse<List<FriendResponse>> getMyFriends() {
+        return MessageResponse.<List<FriendResponse>>builder()
+                .message("Lấy danh sách bạn bè thành công")
+                .data(friendService.getMyFriends())
                 .build();
     }
 

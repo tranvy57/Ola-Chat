@@ -8,6 +8,16 @@ server:
         max-http-header-size: 64KB
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 465
+    username: tieuvy5723@gmail.com
+    password: fbjj qdvu xskr xzgv
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.starttls.enable: false
+
   datasource:
     url: jdbc:mysql://yamabiko.proxy.rlwy.net:23769/railway
     username: root
@@ -22,6 +32,13 @@ spring:
     mongodb:
       uri: mongodb+srv://mongodb:mongopassword@ola-cluster.2db1h.mongodb.net/?retryWrites=true&w=majority&appName=ola-chat-db
       database: ola-chat
+#    redis:
+#      host: maglev.proxy.rlwy.net
+#      port: 30825
+#      username: default
+#      password: RyTQwEZwwUnrJcNObOxamkGOSwoUnNBl
+#      ssl:
+#        enabled: true
     redis:
       host: localhost
       port: 6379
