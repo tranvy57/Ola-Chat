@@ -61,8 +61,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    MessageResponse<Void> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
-        authenticationService.logout(request);
+    MessageResponse<Void> logout(@RequestBody LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+        authenticationService.logout(request, response);
         return MessageResponse.<Void>builder()
                 .message("Đăng xuất thành công")
                 .data(null)

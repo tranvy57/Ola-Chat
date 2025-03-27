@@ -25,6 +25,14 @@ public class RedisService {
         redisTemplate.delete(REFRESH_TOKEN_PREFIX + jit);
     }
 
+    public void addBlacklistedToken(String jit, long duration, TimeUnit unit) {
+        redisTemplate.opsForValue().set("blacklist:" + jit, "revoked", duration, unit);
+    }
+
+    public boolean isTokenBlacklisted(String jit) {
+        return redisTemplate.hasKey("blacklist:" + jit);
+    }
+
 
     //otp email
     private static final long OTP_EXPIRE_SECONDS = 300; // 5 phút

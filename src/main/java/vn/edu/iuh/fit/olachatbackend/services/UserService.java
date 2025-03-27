@@ -40,4 +40,6 @@ public interface UserService {
 
     UserResponse getMyInfo(String token);
 
+    UserResponse searchUserByPhoneOrEmail(String query);
+
 }
