@@ -87,11 +87,6 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.valid-duration}")
     protected long VALID_DURATION;
-
-    @NonFinal
-    @Value("${jwt.refreshable-duration}")
-    protected long REFRESHABLE_DURATION;
-
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
@@ -148,7 +143,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder().token(accessToken).authenticated(true).build();
     }
 
-    public void logout(LogoutRequest request) throws ParseException, JOSEException {
+    public void logout(LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
         try {
             var signToken = verifyToken(request.getToken(), true);
 
@@ -156,6 +151,13 @@ public class AuthenticationService {
 
             // Xóa token khỏi whitelist trong Redis
             redisService.removeWhitelistedToken(jit);
+
+            Cookie refreshTokenCookie = new Cookie("refreshToken", null);
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setSecure(true);
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(0); // Set maxAge = 0 để xóa cookie
+            response.addCookie(refreshTokenCookie);
 
         } catch (UnauthorizedException exception) {
             log.info("Token already expired");
@@ -260,6 +262,11 @@ public class AuthenticationService {
             throw new UnauthorizedException("Token không hợp lệ hoặc đã bị thu hồi");
         }
 
+        if (!isRefresh && redisService.isTokenBlacklisted(claims.getJWTID())) {
+            throw new UnauthorizedException("Access Token đã bị thu hồi");
+        }
+
+
         return signedJWT;
     }
 
@@ -272,6 +279,12 @@ public class AuthenticationService {
 
         return "ROLE_" + user.getRole().name();
     }
+
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected long REFRESHABLE_DURATION;
+
+
 
 //    public AuthenticationResponse loginWithGoogle(String idToken) {
 //        try {
