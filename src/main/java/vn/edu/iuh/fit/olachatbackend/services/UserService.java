@@ -12,20 +12,18 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
-import com.nimbusds.jose.JOSEException;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 
-import java.text.ParseException;
 import java.util.List;
-import java.util.Optional;
 
 public interface UserService {
     User saveUser(User user);
 
-    Optional<User> getUserById(String id);
+    //Get user by userID
+    UserResponse getUserById(String id);
 
     List<User> findAll();
 

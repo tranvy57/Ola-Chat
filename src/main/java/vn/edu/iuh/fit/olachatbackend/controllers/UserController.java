@@ -94,4 +94,13 @@ public class UserController {
                 .build();
     }
 
+    //Get user by userID
+    @GetMapping("/{id}")
+    public MessageResponse<UserResponse> getUserById(@PathVariable String id) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Lấy thông tin người dùng thành công")
+                .data(userService.getUserById(id))
+                .build();
+    }
+
 }
