@@ -49,6 +49,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -100,6 +101,12 @@ public class AuthenticationService {
         try {
             verifyToken(token, false);
 
+            // Kiểm tra xem token có trong whitelist không
+            String jit = SignedJWT.parse(token).getJWTClaimsSet().getJWTID();
+            if (!redisService.isTokenWhitelisted(jit)) {
+                isValid = false;
+            }
+
         } catch (UnauthorizedException e) {
             isValid = false;
         }
@@ -110,7 +117,8 @@ public class AuthenticationService {
                 .build();
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) {
+
+    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws ParseException {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         var user = userRepository
                 .findByUsername(request.getUsername())
@@ -122,18 +130,14 @@ public class AuthenticationService {
 
         String deviceId = request.getDeviceId();
 
-        var accessToken = generateToken(user, deviceId, false); // 🔥 Sửa tại đây (Dùng chung hàm generateToken)
-        var refreshToken = generateToken(user, deviceId, true); // 🔥 Sửa tại đây
+        var accessToken = generateToken(user, deviceId, false);
+        var refreshToken = generateToken(user, deviceId, true);
 
-        // Lưu refresh token vào DB (mã hóa)
-        RefreshToken refreshTokenEntity = new RefreshToken();
-        refreshTokenEntity.setTokenHash(passwordEncoder.encode(refreshToken)); // Lưu dạng hash
-        refreshTokenEntity.setDeviceId(deviceId);
-        refreshTokenEntity.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
-        refreshTokenEntity.setUser(user);
-        refreshTokenRepository.save(refreshTokenEntity);
+        // Lưu refresh token vào Redis (whitelist)
+        String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
+        redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
 
-        // 🔥 Thêm refresh token vào HTTP-only cookie
+        // Thêm refresh token vào HTTP-only cookie
         Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
@@ -149,50 +153,50 @@ public class AuthenticationService {
             var signToken = verifyToken(request.getToken(), true);
 
             String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
 
-            InvalidatedToken invalidatedToken =
-                    InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
+            // Xóa token khỏi whitelist trong Redis
+            redisService.removeWhitelistedToken(jit);
 
-//            invalidatedTokenRepository.save(invalidatedToken);
-            redisService.saveInvalidatedToken(jit, request.getToken());
         } catch (UnauthorizedException exception) {
-
             log.info("Token already expired");
         }
     }
 
-    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
-        var signedJWT = verifyToken(request.getToken(), true);
-
-        var username = signedJWT.getJWTClaimsSet().getSubject();
-        var deviceId = signedJWT.getJWTClaimsSet().getStringClaim("deviceId");
-
-        var user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
-
-        var newAccessToken = generateToken(user, deviceId, false);
-        var newRefreshToken = generateToken(user, deviceId, true);
-
-        // Cập nhật refresh token mới vào DB
-        var passwordEncoder = new BCryptPasswordEncoder(10);
-        RefreshToken refreshTokenEntity = new RefreshToken();
-        refreshTokenEntity.setTokenHash(passwordEncoder.encode(newRefreshToken));
-        refreshTokenEntity.setDeviceId(deviceId);
-        refreshTokenEntity.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
-        refreshTokenEntity.setUser(user);
-        refreshTokenRepository.save(refreshTokenEntity);
-
-        //  Cập nhật refresh token mới vào cookie
-        Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
-        response.addCookie(refreshTokenCookie);
-
-        return AuthenticationResponse.builder().token(newAccessToken).authenticated(true).build();
-    }
+//    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+//        var signedJWT = verifyToken(request.getToken(), true);
+//
+//        var username = signedJWT.getJWTClaimsSet().getSubject();
+//        var deviceId = signedJWT.getJWTClaimsSet().getStringClaim("deviceId");
+//
+//        var user = userRepository.findByUsername(username)
+//                .orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
+//
+//        // Kiểm tra token có trong Redis whitelist không
+//        String jit = signedJWT.getJWTClaimsSet().getJWTID();
+//        if (!redisService.isTokenWhitelisted(jit)) {
+//            throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã hết hạn");
+//        }
+//
+//        var newAccessToken = generateToken(user, deviceId, false);
+//        var newRefreshToken = generateToken(user, deviceId, true);
+//
+//        // Cập nhật refresh token mới vào Redis whitelist
+//        String newJit = SignedJWT.parse(newRefreshToken).getJWTClaimsSet().getJWTID();
+//        redisService.saveWhitelistedToken(newJit, newRefreshToken, 7, TimeUnit.DAYS);
+//
+//        // Xóa token cũ khỏi whitelist
+//        redisService.removeWhitelistedToken(jit);
+//
+//        // Cập nhật refresh token mới vào cookie
+//        Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
+//        refreshTokenCookie.setHttpOnly(true);
+//        refreshTokenCookie.setSecure(true);
+//        refreshTokenCookie.setPath("/");
+//        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+//        response.addCookie(refreshTokenCookie);
+//
+//        return AuthenticationResponse.builder().token(newAccessToken).authenticated(true).build();
+//    }
 
     private String generateToken(User user, String deviceId, boolean isRefreshToken) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
@@ -252,12 +256,13 @@ public class AuthenticationService {
             throw new UnauthorizedException("Token đã hết hạn");
         }
 
-        if (redisService.isTokenInvalidated(claims.getJWTID())) {
-            throw new UnauthorizedException("Token đã bị vô hiệu hóa");
+        if (!redisService.isTokenWhitelisted(claims.getJWTID())) {
+            throw new UnauthorizedException("Token không hợp lệ hoặc đã bị thu hồi");
         }
 
         return signedJWT;
     }
+
 
 
     private String buildScope(User user) {

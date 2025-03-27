@@ -22,7 +22,7 @@ public class AuthController {
     private AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    MessageResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletResponse response) {
+    MessageResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletResponse response) throws ParseException {
         var result = authenticationService.authenticate(request, response);
         return MessageResponse.<AuthenticationResponse>builder()
                 .message("Đăng nhập thành công")
