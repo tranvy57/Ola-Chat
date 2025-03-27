@@ -41,6 +41,8 @@ public class User {
 
     @Column(name = "avatar", length = 1024)
     private String avatar;
+
+    private String bio;
     private LocalDateTime dob;
     @Enumerated(EnumType.STRING)
     private UserStatus status;

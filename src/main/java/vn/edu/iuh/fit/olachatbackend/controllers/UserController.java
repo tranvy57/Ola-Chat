@@ -84,4 +84,11 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping("/search")
+    public MessageResponse<UserResponse> searchUserByPhoneOrEmail(String query) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Tìm thấy người dùng")
+                .data(userService.searchUserByPhoneOrEmail(query))
+                .build();
+    }
 }
