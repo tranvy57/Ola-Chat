@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Participant;
@@ -137,6 +138,23 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             throw new UnauthorizedException("Lỗi xử lý xác thực token: " + e.getMessage());
         }
+    }
+
+    @Override
+    public UserResponse updateMyInfo(UserUpdateInfoRequest request) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        user.setDisplayName(request.getDisplayName());
+        user.setDob(request.getDob());
+        user.setUpdatedAt(LocalDateTime.now());
+
+        User updatedUser = userRepository.save(user);
+
+        return userMapper.toUserResponse(updatedUser);
     }
 
 }

@@ -14,6 +14,7 @@ package vn.edu.iuh.fit.olachatbackend.services;
 
 import com.nimbusds.jose.JOSEException;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 
@@ -39,5 +40,8 @@ public interface UserService {
     List<UserResponse> getUsersByConversationId(String conversationId);
 
     UserResponse getMyInfo(String token);
+
+    //Cập nhật thông tin cá nhân (Display_name, Dob)
+    UserResponse updateMyInfo(UserUpdateInfoRequest request);
 
 }
