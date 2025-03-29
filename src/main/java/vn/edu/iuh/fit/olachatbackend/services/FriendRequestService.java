@@ -22,4 +22,5 @@ public interface FriendRequestService {
     public List<FriendRequestResponse> getReceivedFriendRequests();
     public List<FriendRequestResponse> getSentFriendRequests();
     public void acceptFriendRequest(String requestId);
+    public void rejectFriendRequest(String requestId);
 }

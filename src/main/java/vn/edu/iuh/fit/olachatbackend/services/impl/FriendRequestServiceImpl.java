@@ -22,6 +22,7 @@ import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.RequestStatus;
+import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
@@ -53,7 +54,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new NotFoundException("Người nhận không tồn tại."));
 
-        if (friendRequestRepository.existsBySenderAndReceiver(sender, receiver)) {
+        if (friendRequestRepository.existsBySenderAndReceiverAndStatus(sender, receiver, RequestStatus.PENDING)) {
             throw new ConflicException("Lời mời đã được gửi trước đó.");
         }
 
@@ -132,6 +133,10 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             throw new UnauthorizedException("Bạn không có quyền chấp nhận lời mời này!");
         }
 
+        if (!friendRequest.getStatus().equals(RequestStatus.PENDING)) {
+            throw new BadRequestException("Lời mời kết bạn này đã được xử lý trước đó!");
+        }
+
         // Cập nhật trạng thái lời mời
         friendRequest.setStatus(RequestStatus.ACCEPTED);
         friendRequest.setResponseAt(LocalDateTime.now());
@@ -143,5 +148,26 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
         friendRequestRepository.save(friendRequest);
         friendRepository.save(friend);
+    }
+
+    @Override
+    public void rejectFriendRequest(String requestId) {
+        User receiver  = getCurrentUser();
+
+        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
+                .orElseThrow( () -> new NotFoundException("Không tìm thấy lời mời kết bạn."));
+
+        if (!friendRequest.getReceiver().equals(receiver)) {
+            throw new UnauthorizedException("Bạn không có quyền chấp nhận lời mời này!");
+        }
+
+        if (!friendRequest.getStatus().equals(RequestStatus.PENDING)) {
+            throw new BadRequestException("Lời mời kết bạn này đã được xử lý trước đó!");
+        }
+
+        friendRequest.setStatus(RequestStatus.REJECTED);
+        friendRequest.setResponseAt(LocalDateTime.now());
+
+        friendRequestRepository.save(friendRequest);
     }
 }
