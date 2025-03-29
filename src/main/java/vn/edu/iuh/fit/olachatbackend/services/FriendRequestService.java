@@ -12,8 +12,13 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import vn.edu.iuh.fit.olachatbackend.dtos.FriendRequestDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendRequestResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
 
+import java.util.List;
+
 public interface FriendRequestService {
-    FriendRequest sendRequest(FriendRequest request);
+    public FriendRequestDTO sendFriendRequest(FriendRequestDTO friendRequestDTO);
+    public List<FriendRequestResponse> getReceivedFriendRequests();
 }
