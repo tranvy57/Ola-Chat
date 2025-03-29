@@ -40,4 +40,12 @@ public class FriendController {
                 .data(friendRequestService.getSentFriendRequests())
                 .build();
     }
+
+    @PutMapping("/{requestId}/accept")
+    public MessageResponse<Void> acceptFriendRequest(@PathVariable String requestId) {
+        friendRequestService.acceptFriendRequest(requestId);
+        return MessageResponse.<Void>builder()
+                .message("Đã chấp nhận lời mời kết bạn")
+                .build();
+    }
 }

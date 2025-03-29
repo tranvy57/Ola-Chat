@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FriendRequestRepository extends JpaRepository<FriendRequest, Long> {
+public interface FriendRequestRepository extends JpaRepository<FriendRequest, String> {
     Optional<FriendRequest> findBySenderAndReceiver(User sender, User receiver);
     boolean existsBySenderAndReceiver(User sender, User receiver);
 

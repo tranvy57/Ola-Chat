@@ -17,16 +17,22 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.FriendRequestDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendRequestResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.Friend;
 import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.RequestStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
+import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.repositories.FriendRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRequestRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.FriendRequestService;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +40,7 @@ import java.util.stream.Collectors;
 public class FriendRequestServiceImpl implements FriendRequestService {
     private final FriendRequestRepository friendRequestRepository;
     private final UserRepository userRepository;
+    private final FriendRepository friendRepository;
 
     @Override
     public FriendRequestDTO sendFriendRequest(FriendRequestDTO friendRequestDTO) {
@@ -110,5 +117,31 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                         req.getReceiver().getAvatar()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void acceptFriendRequest(String requestId) {
+        User receiver  = getCurrentUser();
+
+        // Tìm lời mời kết bạn
+        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
+                .orElseThrow( () -> new NotFoundException("Không tìm thấy lời mời kết bạn."));
+
+        // Kiểm tra xem người dùng có phải là người nhận không
+        if (!friendRequest.getReceiver().equals(receiver)) {
+            throw new UnauthorizedException("Bạn không có quyền chấp nhận lời mời này!");
+        }
+
+        // Cập nhật trạng thái lời mời
+        friendRequest.setStatus(RequestStatus.ACCEPTED);
+        friendRequest.setResponseAt(LocalDateTime.now());
+
+        Friend friend = new Friend();
+        friend.setUser(friendRequest.getSender());
+        friend.setFriend(receiver);
+        friend.setStatus(FriendStatus.ACTIVE);
+
+        friendRequestRepository.save(friendRequest);
+        friendRepository.save(friend);
     }
 }
