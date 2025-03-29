@@ -38,8 +38,7 @@ public class User {
 
     @Column(unique = true)
     private String email;
-
-    @Column(name = "avatar", length = 1024)
+    @Column(length = 1000)
     private String avatar;
 
     private String bio;
