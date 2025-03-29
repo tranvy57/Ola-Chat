@@ -21,4 +21,5 @@ import java.util.List;
 public interface FriendRequestService {
     public FriendRequestDTO sendFriendRequest(FriendRequestDTO friendRequestDTO);
     public List<FriendRequestResponse> getReceivedFriendRequests();
+    public List<FriendRequestResponse> getSentFriendRequests();
 }

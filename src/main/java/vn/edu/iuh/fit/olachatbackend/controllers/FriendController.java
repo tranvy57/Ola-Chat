@@ -32,4 +32,12 @@ public class FriendController {
                 .data(friendRequestService.getReceivedFriendRequests())
                 .build();
     }
+
+    @GetMapping("/requests/sent")
+    public MessageResponse<List<FriendRequestResponse>> getSentFriendRequests() {
+        return MessageResponse.<List<FriendRequestResponse>>builder()
+                .message("Danh sách lời mời kết bạn đã gửi.")
+                .data(friendRequestService.getSentFriendRequests())
+                .build();
+    }
 }

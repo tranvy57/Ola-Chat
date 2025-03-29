@@ -93,4 +93,22 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public List<FriendRequestResponse> getSentFriendRequests() {
+        User currentUser = getCurrentUser();
+        List<FriendRequest> requests = friendRequestRepository.findBySenderAndStatus(currentUser, RequestStatus.PENDING);
+
+        if (requests.isEmpty()) {
+            throw new NotFoundException("Bạn chưa gửi bất kì lời mời kết nào.");
+        }
+
+        return requests.stream()
+                .map(req -> new FriendRequestResponse(
+                        req.getId(),
+                        req.getReceiver().getId(),
+                        req.getReceiver().getDisplayName(),
+                        req.getReceiver().getAvatar()
+                ))
+                .collect(Collectors.toList());
+    }
 }
