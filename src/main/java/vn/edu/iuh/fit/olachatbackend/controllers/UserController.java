@@ -103,4 +103,12 @@ public class UserController {
                 .build();
     }
 
+    //Change password
+    @PutMapping("/change-password")
+    public MessageResponse<UserResponse> changePassword(@RequestParam String oldPassword, @RequestParam String newPassword) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Đổi mật khẩu thành công")
+                .data(userService.changePassword(oldPassword, newPassword))
+                .build();
+    }
 }

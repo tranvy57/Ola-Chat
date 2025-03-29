@@ -151,4 +151,24 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(updatedUser);
     }
 
+    @Override
+    public UserResponse changePassword(String oldPassword, String newPassword) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new UnauthorizedException("Mật khẩu cũ không chính xác");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+
+        User updatedUser = userRepository.save(user);
+
+        return userMapper.toUserResponse(updatedUser);
+    }
+
 }

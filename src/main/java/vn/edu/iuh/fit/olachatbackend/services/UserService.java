@@ -42,4 +42,7 @@ public interface UserService {
     //Cập nhật thông tin cá nhân (Display_name, Dob)
     UserResponse updateMyInfo(UserUpdateInfoRequest request);
 
+    //Change password
+    UserResponse changePassword(String oldPassword, String newPassword);
+
 }
