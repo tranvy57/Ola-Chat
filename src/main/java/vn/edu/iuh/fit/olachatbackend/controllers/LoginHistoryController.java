@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.edu.iuh.fit.olachatbackend.dtos.LoginHistoryDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserStatusResponse;
 import vn.edu.iuh.fit.olachatbackend.services.LoginHistoryService;
 
 @RestController
@@ -35,5 +36,11 @@ public class LoginHistoryController {
     public ResponseEntity<LoginHistoryDTO> getRecentLogin(@PathVariable String userId) {
         LoginHistoryDTO loginHistoryDTO = loginHistoryService.getRecentLogin(userId);
         return ResponseEntity.ok(loginHistoryDTO);
+    }
+
+    @GetMapping("/status/{userId}")
+    public ResponseEntity<UserStatusResponse> isUserOnline(@PathVariable String userId) {
+        boolean isOnline = loginHistoryService.isUserOnline(userId);
+        return ResponseEntity.ok(new UserStatusResponse(userId, isOnline));
     }
 }
