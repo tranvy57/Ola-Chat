@@ -127,12 +127,15 @@ public class AuthenticationService {
 
             String jit = signToken.getJWTClaimsSet().getJWTID();
             Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+            String username = signToken.getJWTClaimsSet().getSubject();
 
             InvalidatedToken invalidatedToken =
                     InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
 
 //            invalidatedTokenRepository.save(invalidatedToken);
             redisService.saveInvalidatedToken(jit, request.getToken());
+
+            loginHistoryService.saveLogout(userRepository.findByUsername(username).get().getId());
         } catch (UnauthorizedException exception) {
 
             log.info("Token already expired");
