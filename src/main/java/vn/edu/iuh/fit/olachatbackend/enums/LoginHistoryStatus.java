@@ -1,9 +1,9 @@
 /*
  * @ (#) LoginHistoryStatus.java       1.0     30/03/2025
- * 
+ *
  * Copyright (c) 2025 IUH. All rights reserved.
  */
- 
+
 package vn.edu.iuh.fit.olachatbackend.enums;
 /*
  * @description:
@@ -12,5 +12,16 @@ package vn.edu.iuh.fit.olachatbackend.enums;
  * @version:    1.0
  */
 
-public class LoginHistoryStatus {
+import lombok.Getter;
+
+@Getter
+public enum LoginHistoryStatus {
+    ONLINE("ONLINE"), OFFLINE("OFFLINE");
+
+    private final String value;
+    private LoginHistoryStatus(String value) {
+        this.value = value;
+    }
+
+
 }

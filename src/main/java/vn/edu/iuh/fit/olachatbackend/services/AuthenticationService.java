@@ -14,7 +14,6 @@ import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,7 +38,6 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -56,6 +54,9 @@ public class AuthenticationService {
     private RedisService redisService;
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private LoginHistoryService loginHistoryService;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -114,6 +115,8 @@ public class AuthenticationService {
         if (!authenticated) throw new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu");
 
         var token = generateToken(user);
+
+        loginHistoryService.saveLogin(user.getId());
 
         return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
@@ -256,6 +259,8 @@ public class AuthenticationService {
                 throw new ConflicException("Email already exists with different provider");
             }
 
+            loginHistoryService.saveLogin(user.getId());
+
             return new AuthenticationResponse(generateToken(user), true);
         } catch (Exception e) {
             throw new InternalServerErrorException("Error verifying token: " + e.getMessage());
@@ -281,6 +286,8 @@ public class AuthenticationService {
             // Kiểm tra hoặc tạo người dùng mới
             User user = userRepository.findByEmail(email)
                     .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
+
+            loginHistoryService.saveLogin(user.getId());
 
             return new AuthenticationResponse(generateToken(user), true);
         } catch (Exception e) {
@@ -357,4 +364,5 @@ public class AuthenticationService {
         redisService.deleteOtp(email);
 
     }
+
 }
