@@ -7,6 +7,7 @@
 package vn.edu.iuh.fit.olachatbackend.controllers;
 
 import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Friend;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
@@ -84,4 +85,30 @@ public class UserController {
                 .build();
     }
 
+    //Cập nhật thông tin cá nhân (Display_name, Dob)
+    @PutMapping("/my-update")
+    public MessageResponse<UserResponse> updateMyInfo(@RequestBody @Valid UserUpdateInfoRequest request) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Cập nhật thông tin người dùng thành công")
+                .data(userService.updateMyInfo(request))
+                .build();
+    }
+
+    //Get user by userID
+    @GetMapping("/{id}")
+    public MessageResponse<UserResponse> getUserById(@PathVariable String id) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Lấy thông tin người dùng thành công")
+                .data(userService.getUserById(id))
+                .build();
+    }
+
+    //Change password
+    @PutMapping("/change-password")
+    public MessageResponse<UserResponse> changePassword(@RequestParam String oldPassword, @RequestParam String newPassword) {
+        return MessageResponse.<UserResponse>builder()
+                .message("Đổi mật khẩu thành công")
+                .data(userService.changePassword(oldPassword, newPassword))
+                .build();
+    }
 }
