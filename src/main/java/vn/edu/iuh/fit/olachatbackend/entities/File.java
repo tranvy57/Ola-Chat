@@ -15,7 +15,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "media")
+@Table(name = "file")
 @Getter
 @Setter
 @NoArgsConstructor
