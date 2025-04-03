@@ -40,4 +40,16 @@ public class FileController {
                     .body("Upload failed: " + e.getMessage());
         }
     }
+
+    //delete file and remove from database
+    @PostMapping("/delete")
+    public ResponseEntity<?> deleteFile(@RequestParam("publicId") String publicId) {
+        try {
+            cloudinaryService.deleteFile(publicId);
+            return ResponseEntity.ok("File deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body("Delete failed: " + e.getMessage());
+        }
+    }
 }

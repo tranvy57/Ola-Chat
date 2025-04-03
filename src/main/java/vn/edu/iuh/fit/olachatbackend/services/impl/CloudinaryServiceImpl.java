@@ -47,15 +47,28 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         Map<?, ?> uploadResult = cloudinary.uploader()
                 .upload(file.getBytes(), ObjectUtils.asMap("resource_type", "auto"));
         String url = uploadResult.get("secure_url").toString();
-        File fileUpload = File.builder().
-                fileUrl(url)
+        String publicId = uploadResult.get("public_id").toString();
+        File fileUpload = File.builder()
+                .fileUrl(url)
                 .fileType(file.getContentType())
                 .fileSize(file.getSize())
                 .uploadedAt(LocalDateTime.now())
                 .uploadedBy(user)
                 .associatedIDMessageId(associatedIDMessageId)
+                .publicId(publicId) // Add publicId to the File entity
                 .build();
         fileRepository.save(fileUpload);
         return fileUpload;
+    }
+
+    //delete file and delete from database
+    @Override
+    public void deleteFile(String publicId) throws IOException {
+        // Delete the file from Cloudinary
+        cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+
+        // Find the file in the database and delete it
+        File file = fileRepository.findByPublicId(publicId).orElseThrow(() -> new NotFoundException("File not found"));
+        fileRepository.delete(file);
     }
 }

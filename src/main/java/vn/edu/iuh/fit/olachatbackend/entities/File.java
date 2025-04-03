@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long mediaID;
+    private Long fileId;
 
     @ManyToOne
     @JoinColumn(name = "uploaded_by", nullable = false)
@@ -41,6 +41,8 @@ public class File {
 
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
+
+    private String publicId;
 
     private Long associatedIDMessageId;
 }

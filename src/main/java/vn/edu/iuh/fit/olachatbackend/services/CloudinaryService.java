@@ -9,4 +9,6 @@ import java.io.IOException;
 @Service
 public interface CloudinaryService {
     File uploadFileAndSaveToDB(MultipartFile file, Long associatedIDMessageId) throws IOException;
+    //delete file and delete from database
+    void deleteFile(String publicId) throws IOException;
 }
