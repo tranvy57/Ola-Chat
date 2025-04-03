@@ -11,4 +11,6 @@ public interface CloudinaryService {
     File uploadFileAndSaveToDB(MultipartFile file, Long associatedIDMessageId) throws IOException;
     //delete file and delete from database
     void deleteFile(String publicId) throws IOException;
+    //download file
+    byte[] downloadFile(String publicId) throws Exception;
 }

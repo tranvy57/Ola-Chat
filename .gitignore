@@ -59,3 +59,5 @@ Thumbs.db
 
 # Ignore Help documentation
 HELP.md
+
+src/main/resources/fileDownload/
