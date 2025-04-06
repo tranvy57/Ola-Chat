@@ -45,7 +45,23 @@ public class FriendController {
     public MessageResponse<Void> acceptFriendRequest(@PathVariable String requestId) {
         friendRequestService.acceptFriendRequest(requestId);
         return MessageResponse.<Void>builder()
-                .message("Đã chấp nhận lời mời kết bạn")
+                .message("Đã chấp nhận lời mời kết bạn.")
                 .build();
+    }
+
+    @PutMapping("/{requestId}/reject")
+    public MessageResponse<Void> rejectFriendRequest(@PathVariable String requestId) {
+        friendRequestService.rejectFriendRequest(requestId);
+        return MessageResponse.<Void>builder()
+                .message("Đã từ chối lời mời kết bạn.")
+                .build();
+    }
+
+    @PostMapping("/register-device")
+    public MessageResponse<?> registerDevice(@RequestParam String userId, @RequestParam String token) {
+        friendRequestService.registerDevice(userId, token);
+        return MessageResponse.<Void>builder()
+                .message("Đã đăng ký thiết bị thành công.")
+
     }
 }

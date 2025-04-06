@@ -35,6 +35,7 @@ import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -170,7 +171,7 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toUserResponse(updatedUser);
     }
-
+  
     @Override
     public UserResponse searchUserByPhoneOrEmail(String query) {
         if (query == null || query.trim().isEmpty()) {

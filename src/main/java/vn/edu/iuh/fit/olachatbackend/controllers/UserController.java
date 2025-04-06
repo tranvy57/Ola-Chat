@@ -9,10 +9,6 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendResponse;
-import vn.edu.iuh.fit.olachatbackend.entities.Friend;
-import vn.edu.iuh.fit.olachatbackend.entities.User;
-import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
-
 import jakarta.validation.Valid;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
@@ -111,6 +107,7 @@ public class UserController {
                 .data(userService.changePassword(oldPassword, newPassword))
                 .build();
     }
+
     @GetMapping("/search")
     public MessageResponse<UserResponse> searchUserByPhoneOrEmail(String query) {
         return MessageResponse.<UserResponse>builder()
