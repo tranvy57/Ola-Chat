@@ -32,6 +32,7 @@ import vn.edu.iuh.fit.olachatbackend.repositories.FriendRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRequestRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.FriendRequestService;
+import vn.edu.iuh.fit.olachatbackend.services.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +46,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
     private final UserRepository userRepository;
     private final FriendRepository friendRepository;
     private final DeviceTokenRepository deviceTokenRepository;
+    private final NotificationService notificationService;
 
     @Override
     public FriendRequestDTO sendFriendRequest(FriendRequestDTO friendRequestDTO) {
@@ -71,6 +73,13 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         friendRequest.setStatus(RequestStatus.PENDING);
 
         FriendRequest rs =  friendRequestRepository.save(friendRequest);
+
+        DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
+        if (deviceToken != null) {
+            notificationService.sendFriendRequestNotification(senderId, receiverId, deviceToken.getToken());
+        } else {
+            throw new NotFoundException("Không tìm thấy token cho user" + receiverId);
+        }
 
         return FriendRequestDTO.builder()
                 .senderId(rs.getSender().getId())
