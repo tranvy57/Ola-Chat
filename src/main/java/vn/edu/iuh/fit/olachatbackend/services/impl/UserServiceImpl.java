@@ -171,7 +171,8 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toUserResponse(updatedUser);
     }
-
+  
+    @Override
     public UserResponse searchUserByPhoneOrEmail(String query) {
         if (query == null || query.trim().isEmpty()) {
             throw new IllegalArgumentException("Query không được để trống");

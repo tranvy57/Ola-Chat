@@ -165,6 +165,7 @@ public class AuthenticationService {
             String username = signToken.getJWTClaimsSet().getSubject();
             Optional<User> user = userRepository.findByUsername(username);
             loginHistoryService.saveLogout(user.map(User::getId).orElse(null));
+
         } catch (UnauthorizedException exception) {
             log.info("Token already expired");
         }
@@ -295,21 +296,6 @@ public class AuthenticationService {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                     .setAudience(Arrays.asList(googleClientId, androidClientId))
                     .build();
-
-            GoogleIdToken googleIdToken = verifier.verify(idToken);
-            if (googleIdToken == null) {
-                throw new UnauthorizedException("Invalid ID token");
-            }
-
-            // Lấy thông tin người dùng từ payload
-            GoogleIdToken.Payload payload = googleIdToken.getPayload();
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            String picture = (String) payload.get("picture");
-
-            // Kiểm tra hoặc tạo người dùng
-            User user = userRepository.findByEmail(email)
-                    .orElseGet(() -> createGoogleUser(email, name, picture));
 
             if (user.getAuthProvider() != AuthProvider.GOOGLE) {
                 throw new ConflicException("Email already exists with different provider");

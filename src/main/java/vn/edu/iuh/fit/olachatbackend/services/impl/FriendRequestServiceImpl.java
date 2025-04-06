@@ -36,6 +36,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class FriendRequestServiceImpl implements FriendRequestService {
@@ -56,7 +61,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new NotFoundException("Người nhận không tồn tại."));
 
-        if (friendRequestRepository.existsBySenderAndReceiverAndStatus(sender, receiver, RequestStatus.PENDING)) {
+        if (friendRequestRepository.existsBySenderAndReceiver(sender, receiver)) {
             throw new ConflicException("Lời mời đã được gửi trước đó.");
         }
 
@@ -193,5 +198,6 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         }
         deviceToken.setToken(token);
         deviceTokenRepository.save(deviceToken);
+
     }
 }
