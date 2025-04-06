@@ -71,6 +71,6 @@ public class FriendController {
         friendRequestService.registerDevice(userId, token);
         return MessageResponse.<Void>builder()
                 .message("Đã đăng ký thiết bị thành công.")
-                .build();
+
     }
 }
