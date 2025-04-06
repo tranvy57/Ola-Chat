@@ -200,4 +200,28 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         deviceTokenRepository.save(deviceToken);
 
     }
+
+    @Override
+    public void unfriend(String userId, String friendId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> friendOpt = userRepository.findById(friendId);
+
+        if (userOpt.isEmpty() || friendOpt.isEmpty()) {
+            throw new NotFoundException("Không tìm thấy người dùng!");
+        }
+
+        Optional<Friend> relationOpt = friendRepository.findByUserIdAndFriendId(userId, friendId);
+        Optional<Friend> reverseRelationOpt = friendRepository.findByUserIdAndFriendId(friendId, userId);
+
+        boolean isFriend = relationOpt.map(r -> r.getStatus() == FriendStatus.ACTIVE).orElse(false)
+                || reverseRelationOpt.map(r -> r.getStatus() == FriendStatus.ACTIVE).orElse(false);
+
+        if (!isFriend) {
+            throw new NotFoundException("Hai người dùng không phải bạn bè!");
+        }
+
+        relationOpt.ifPresent(friendRepository::delete);
+        reverseRelationOpt.ifPresent(friendRepository::delete);
+
+    }
 }
