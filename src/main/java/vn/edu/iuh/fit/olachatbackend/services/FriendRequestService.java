@@ -23,4 +23,6 @@ public interface FriendRequestService {
     public List<FriendRequestResponse> getSentFriendRequests();
     public void acceptFriendRequest(String requestId);
     public void rejectFriendRequest(String requestId);
+
+    void registerDevice(String userId, String token);
 }

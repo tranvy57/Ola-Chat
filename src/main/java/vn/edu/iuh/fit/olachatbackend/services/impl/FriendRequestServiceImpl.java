@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.FriendRequestDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendRequestResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
 import vn.edu.iuh.fit.olachatbackend.entities.Friend;
 import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
@@ -26,6 +27,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRequestRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
@@ -42,6 +44,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
     private final FriendRequestRepository friendRequestRepository;
     private final UserRepository userRepository;
     private final FriendRepository friendRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
 
     @Override
     public FriendRequestDTO sendFriendRequest(FriendRequestDTO friendRequestDTO) {
@@ -169,5 +172,16 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         friendRequest.setResponseAt(LocalDateTime.now());
 
         friendRequestRepository.save(friendRequest);
+    }
+
+    @Override
+    public void registerDevice(String userId, String token) {
+        DeviceToken deviceToken = deviceTokenRepository.findByUserId(userId);
+        if (deviceToken == null) {
+            deviceToken = new DeviceToken();
+            deviceToken.setUserId(userId);
+        }
+        deviceToken.setToken(token);
+        deviceTokenRepository.save(deviceToken);
     }
 }

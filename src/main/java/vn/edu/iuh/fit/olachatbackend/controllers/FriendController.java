@@ -56,4 +56,12 @@ public class FriendController {
                 .message("Đã từ chối lời mời kết bạn.")
                 .build();
     }
+
+    @PostMapping("/register-device")
+    public MessageResponse<?> registerDevice(@RequestParam String userId, @RequestParam String token) {
+        friendRequestService.registerDevice(userId, token);
+        return MessageResponse.<Void>builder()
+                .message("Đã đăng ký thiết bị thành công.")
+                .build();
+    }
 }
