@@ -1,26 +1,16 @@
 package vn.edu.iuh.fit.olachatbackend.services;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import vn.edu.iuh.fit.olachatbackend.entities.File;
 
 import java.io.IOException;
-import java.util.Map;
 
 @Service
-public class CloudinaryService {
-    @Autowired
-    private Cloudinary cloudinary;
-
-    public Map uploadFile(MultipartFile file, String folderName) throws IOException {
-        return cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("folder", folderName));
-    }
-
-    public Map uploadVideo(MultipartFile file, String folderName) throws IOException {
-        return cloudinary
-                .uploader()
-                .upload(file.getBytes(), ObjectUtils.asMap("resource_type", "video", "folder", folderName));
-    }
+public interface CloudinaryService {
+    File uploadFileAndSaveToDB(MultipartFile file, Long associatedIDMessageId) throws IOException;
+    //delete file and delete from database
+    void deleteFile(String publicId) throws IOException;
+    //download file
+    byte[] downloadFile(String publicId) throws Exception;
 }
