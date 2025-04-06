@@ -16,7 +16,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
 
+import java.util.UUID;
+
 @Repository
-public interface DeviceTokenRepository extends JpaRepository<DeviceToken, String> {
+public interface DeviceTokenRepository extends JpaRepository<DeviceToken, UUID> {
+    DeviceToken findByUserIdAndToken(String userId, String token);
     DeviceToken findByUserId(String userId);
 }

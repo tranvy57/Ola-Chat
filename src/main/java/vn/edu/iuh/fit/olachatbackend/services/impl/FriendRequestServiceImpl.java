@@ -23,10 +23,7 @@ import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.RequestStatus;
-import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.exceptions.*;
 import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRequestRepository;
@@ -67,19 +64,23 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             throw new ConflicException("Hai người đã là bạn bè.");
         }
 
+        try {
+            DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
+            if (deviceToken != null) {
+                notificationService.sendFriendRequestNotification(senderId, receiverId, deviceToken.getToken());
+            } else {
+                throw new NotFoundException("Không tìm thấy token cho user: " + receiverId);
+            }
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Lỗi khi gửi thông báo");
+        }
+
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);
         friendRequest.setStatus(RequestStatus.PENDING);
 
         FriendRequest rs =  friendRequestRepository.save(friendRequest);
-
-        DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
-        if (deviceToken != null) {
-            notificationService.sendFriendRequestNotification(senderId, receiverId, deviceToken.getToken());
-        } else {
-            throw new NotFoundException("Không tìm thấy token cho user" + receiverId);
-        }
 
         return FriendRequestDTO.builder()
                 .senderId(rs.getSender().getId())

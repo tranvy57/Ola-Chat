@@ -9,5 +9,4 @@ public class FriendRequestDTO {
     private String senderId;
     private String receiverId;
 
-
 }
