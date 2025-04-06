@@ -40,6 +40,8 @@ public class User {
     private String email;
     @Column(length = 1000)
     private String avatar;
+
+    private String bio;
     private LocalDateTime dob;
     @Enumerated(EnumType.STRING)
     private UserStatus status;

@@ -44,5 +44,6 @@ public interface UserService {
 
     //Change password
     UserResponse changePassword(String oldPassword, String newPassword);
+    UserResponse searchUserByPhoneOrEmail(String query);
 
 }

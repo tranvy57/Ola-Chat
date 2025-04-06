@@ -21,4 +21,6 @@ import java.util.List;
 @Repository
 public interface FriendRepository extends JpaRepository<Friend, Long> {
     List<Friend> findByUser_IdOrFriend_Id(String userId1, String userId2);
+
+
 }

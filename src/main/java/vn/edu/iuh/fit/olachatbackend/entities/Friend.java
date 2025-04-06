@@ -19,34 +19,34 @@ import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 
 import java.time.LocalDateTime;
 
-        @Entity
-        @Getter
-        @Setter
-        @NoArgsConstructor
-        @AllArgsConstructor
-        @FieldDefaults(level = AccessLevel.PRIVATE)
-        @Builder
-        public class Friend {
-            @Id
-            @GeneratedValue(strategy = GenerationType.UUID)
-            private String id;
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+public class Friend {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-            @ManyToOne
-            @JoinColumn(name = "user_id")
-            private User user;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
-            @ManyToOne
-            @JoinColumn(name = "friend_id")
-            private User friend;
+    @ManyToOne
+    @JoinColumn(name = "friend_id")
+    private User friend;
 
-            @Enumerated(EnumType.STRING)
-            private FriendStatus status;
-            private LocalDateTime friendSince;
-            private LocalDateTime createdAt;
+    @Enumerated(EnumType.STRING)
+    private FriendStatus status;
+    private LocalDateTime friendSince;
+    private LocalDateTime createdAt;
 
-            @PrePersist
-            public void prePersist() {
-                this.friendSince = LocalDateTime.now();
-            }
+    @PrePersist
+    public void prePersist() {
+        this.friendSince = LocalDateTime.now();
+    }
 
-        }
+}

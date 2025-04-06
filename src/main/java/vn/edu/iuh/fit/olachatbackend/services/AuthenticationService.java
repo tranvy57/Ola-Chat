@@ -9,6 +9,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
+import vn.edu.iuh.fit.olachatbackend.entities.RefreshToken;
 import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
@@ -36,6 +39,7 @@ import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.repositories.RefreshTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 import java.text.ParseException;
@@ -43,6 +47,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -50,6 +55,9 @@ import java.util.*;
 public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
     @Autowired
     private RedisService redisService;
     @Autowired
@@ -80,11 +88,6 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.valid-duration}")
     protected long VALID_DURATION;
-
-    @NonFinal
-    @Value("${jwt.refreshable-duration}")
-    protected long REFRESHABLE_DURATION;
-
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
@@ -93,6 +96,12 @@ public class AuthenticationService {
 
         try {
             verifyToken(token, false);
+
+            // Kiểm tra xem token có trong whitelist không
+            String jit = SignedJWT.parse(token).getJWTClaimsSet().getJWTID();
+            if (!redisService.isTokenWhitelisted(jit)) {
+                isValid = false;
+            }
 
         } catch (UnauthorizedException e) {
             isValid = false;
@@ -104,7 +113,8 @@ public class AuthenticationService {
                 .build();
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+
+    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws ParseException {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         var user = userRepository
                 .findByUsername(request.getUsername())
@@ -114,73 +124,106 @@ public class AuthenticationService {
 
         if (!authenticated) throw new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu");
 
-        var token = generateToken(user);
+        String deviceId = request.getDeviceId();
+
+        var accessToken = generateToken(user, deviceId, false);
+        var refreshToken = generateToken(user, deviceId, true);
+
+        // Lưu refresh token vào Redis (whitelist)
+        String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
+        redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
+
+        // Thêm refresh token vào HTTP-only cookie
+        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(refreshTokenCookie);
 
         loginHistoryService.saveLogin(user.getId());
 
-        return AuthenticationResponse.builder().token(token).authenticated(true).build();
+        return AuthenticationResponse.builder().token(accessToken).authenticated(true).build();
     }
 
-    public void logout(LogoutRequest request) throws ParseException, JOSEException {
+    public void logout(LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
         try {
             var signToken = verifyToken(request.getToken(), true);
 
             String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+
+            // Xóa token khỏi whitelist trong Redis
+            redisService.removeWhitelistedToken(jit);
+
+            Cookie refreshTokenCookie = new Cookie("refreshToken", null);
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setSecure(true);
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(0); // Set maxAge = 0 để xóa cookie
+            response.addCookie(refreshTokenCookie);
+
             String username = signToken.getJWTClaimsSet().getSubject();
-
-            InvalidatedToken invalidatedToken =
-                    InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
-
-//            invalidatedTokenRepository.save(invalidatedToken);
-            redisService.saveInvalidatedToken(jit, request.getToken());
-
-            loginHistoryService.saveLogout(userRepository.findByUsername(username).get().getId());
+            Optional<User> user = userRepository.findByUsername(username);
+            loginHistoryService.saveLogout(user.map(User::getId).orElse(null));
         } catch (UnauthorizedException exception) {
-
             log.info("Token already expired");
         }
     }
 
-    public AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException {
-        var signedJWT = verifyToken(request.getToken(), true);
+//    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+//        var signedJWT = verifyToken(request.getToken(), true);
+//
+//        var username = signedJWT.getJWTClaimsSet().getSubject();
+//        var deviceId = signedJWT.getJWTClaimsSet().getStringClaim("deviceId");
+//
+//        var user = userRepository.findByUsername(username)
+//                .orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
+//
+//        // Kiểm tra token có trong Redis whitelist không
+//        String jit = signedJWT.getJWTClaimsSet().getJWTID();
+//        if (!redisService.isTokenWhitelisted(jit)) {
+//            throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã hết hạn");
+//        }
+//
+//        var newAccessToken = generateToken(user, deviceId, false);
+//        var newRefreshToken = generateToken(user, deviceId, true);
+//
+//        // Cập nhật refresh token mới vào Redis whitelist
+//        String newJit = SignedJWT.parse(newRefreshToken).getJWTClaimsSet().getJWTID();
+//        redisService.saveWhitelistedToken(newJit, newRefreshToken, 7, TimeUnit.DAYS);
+//
+//        // Xóa token cũ khỏi whitelist
+//        redisService.removeWhitelistedToken(jit);
+//
+//        // Cập nhật refresh token mới vào cookie
+//        Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
+//        refreshTokenCookie.setHttpOnly(true);
+//        refreshTokenCookie.setSecure(true);
+//        refreshTokenCookie.setPath("/");
+//        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+//        response.addCookie(refreshTokenCookie);
+//
+//        return AuthenticationResponse.builder().token(newAccessToken).authenticated(true).build();
+//    }
 
-        var jit = signedJWT.getJWTClaimsSet().getJWTID();
-        var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-        InvalidatedToken invalidatedToken =
-                InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
-
-//        invalidatedTokenRepository.save(invalidatedToken);
-
-        if (redisService.isTokenInvalidated(jit)) {
-            throw new UnauthorizedException("Token đã bị vô hiệu hóa");
-        }
-
-        var username = signedJWT.getJWTClaimsSet().getSubject();
-
-        var user =
-                userRepository.findByUsername(username).orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
-
-        var token = generateToken(user);
-
-        return AuthenticationResponse.builder().token(token).authenticated(true).build();
-    }
-
-    private String generateToken(User user) {
+    private String generateToken(User user, String deviceId, boolean isRefreshToken) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+        Instant now = Instant.now();
+        long duration = isRefreshToken ? REFRESHABLE_DURATION : VALID_DURATION;
+        Date expiryDate = Date.from(now.plus(duration, ChronoUnit.SECONDS));
+
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("zycute")
-                .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .issueTime(Date.from(now))
+                .expirationTime(expiryDate)
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
+                .claim("deviceId", deviceId)
                 .build();
 
-        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+        Payload payload = new Payload(claimsSet.toJSONObject());
 
         JWSObject jwsObject = new JWSObject(header, payload);
 
@@ -221,12 +264,18 @@ public class AuthenticationService {
             throw new UnauthorizedException("Token đã hết hạn");
         }
 
-        if (redisService.isTokenInvalidated(claims.getJWTID())) {
-            throw new UnauthorizedException("Token đã bị vô hiệu hóa");
+        if (!redisService.isTokenWhitelisted(claims.getJWTID())) {
+            throw new UnauthorizedException("Token không hợp lệ hoặc đã bị thu hồi");
         }
+
+        if (!isRefresh && redisService.isTokenBlacklisted(claims.getJWTID())) {
+            throw new UnauthorizedException("Access Token đã bị thu hồi");
+        }
+
 
         return signedJWT;
     }
+
 
 
     private String buildScope(User user) {
@@ -237,7 +286,11 @@ public class AuthenticationService {
         return "ROLE_" + user.getRole().name();
     }
 
-    public AuthenticationResponse loginWithGoogle(String idToken) {
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected long REFRESHABLE_DURATION;
+
+    public AuthenticationResponse loginWithGoogle(String idToken, String deviceId) {
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                     .setAudience(Arrays.asList(googleClientId, androidClientId))
@@ -264,13 +317,13 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
-            return new AuthenticationResponse(generateToken(user), true);
+            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
         } catch (Exception e) {
             throw new InternalServerErrorException("Error verifying token: " + e.getMessage());
         }
     }
 
-    public AuthenticationResponse loginWithFacebook(String accessToken) {
+    public AuthenticationResponse loginWithFacebook(String accessToken, String deviceId) {
         try {
             String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + accessToken;
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
@@ -292,7 +345,7 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
-            return new AuthenticationResponse(generateToken(user), true);
+            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
         } catch (Exception e) {
             throw new UnauthorizedException("Lỗi xác thực Facebook");
         }

@@ -11,15 +11,26 @@ public class RedisService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    //token login
-    private static final String TOKEN_KEY_PREFIX = "invalidated_token:";
+    private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
 
-    public void saveInvalidatedToken(String tokenId, String token) {
-        redisTemplate.opsForValue().set(TOKEN_KEY_PREFIX + tokenId, token);
+    public void saveWhitelistedToken(String jit, String token, long duration, TimeUnit timeUnit) {
+        redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + jit, token, duration, timeUnit);
     }
 
-    public boolean isTokenInvalidated(String tokenId) {
-        return redisTemplate.hasKey(TOKEN_KEY_PREFIX + tokenId);
+    public boolean isTokenWhitelisted(String jit) {
+        return redisTemplate.hasKey(REFRESH_TOKEN_PREFIX + jit);
+    }
+
+    public void removeWhitelistedToken(String jit) {
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + jit);
+    }
+
+    public void addBlacklistedToken(String jit, long duration, TimeUnit unit) {
+        redisTemplate.opsForValue().set("blacklist:" + jit, "revoked", duration, unit);
+    }
+
+    public boolean isTokenBlacklisted(String jit) {
+        return redisTemplate.hasKey("blacklist:" + jit);
     }
 
 
