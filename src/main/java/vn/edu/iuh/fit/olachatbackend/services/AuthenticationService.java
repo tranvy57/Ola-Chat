@@ -320,7 +320,7 @@ public class AuthenticationService {
 
             return new AuthenticationResponse(generateToken(user, deviceId, false), true);
         } catch (Exception e) {
-            throw new InternalServerErrorException("Error verifying token: " + e.getMessage());
+            throw new BadRequestException("Lỗi xác thực token: " + e.getMessage());
         }
     }
 
@@ -348,7 +348,7 @@ public class AuthenticationService {
 
             return new AuthenticationResponse(generateToken(user, deviceId, false), true);
         } catch (Exception e) {
-            throw new UnauthorizedException("Lỗi xác thực Facebook");
+            throw new BadRequestException("Lỗi xác thực Facebook");
         }
     }
 
