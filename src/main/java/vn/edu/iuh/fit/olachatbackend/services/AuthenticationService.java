@@ -160,29 +160,60 @@ public class AuthenticationService {
     }
 
     public void logout(LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+        String accessToken = request.getAccessToken();
+        String refreshToken = request.getRefreshToken();
+
         try {
-            var signToken = verifyToken(request.getToken(), true);
+            // Parse & verify refresh token
+            SignedJWT refreshSignedToken = verifyToken(refreshToken, true);
 
-            String jit = signToken.getJWTClaimsSet().getJWTID();
+            // Parse access token thủ công để lấy thông tin (vì có thể hết hạn)
+            SignedJWT accessSignedToken = SignedJWT.parse(accessToken);
+            JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+            if (!accessSignedToken.verify(verifier)) {
+                throw new BadRequestException("Access token không hợp lệ");
+            }
 
-            // Xóa token khỏi whitelist trong Redis
-            redisService.removeWhitelistedToken(jit);
+            // Lấy claims
+            JWTClaimsSet refreshClaims = refreshSignedToken.getJWTClaimsSet();
+            JWTClaimsSet accessClaims = accessSignedToken.getJWTClaimsSet();
 
+            String refreshDeviceId = refreshClaims.getStringClaim("deviceId");
+            String accessDeviceId = accessClaims.getStringClaim("deviceId");
+
+            if (!Objects.equals(refreshDeviceId, accessDeviceId)) {
+                throw new BadRequestException("Token không cùng thiết bị");
+            }
+
+            // Xóa refresh token khỏi whitelist
+            String refreshJit = refreshClaims.getJWTID();
+            redisService.removeWhitelistedToken(refreshJit);
+
+            // Thêm access token vào blacklist (chỉ khi có hạn sử dụng)
+            String accessJit = accessClaims.getJWTID();
+            Date expiration = accessClaims.getExpirationTime();
+            if (expiration != null && expiration.after(new Date())) {
+                long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000;
+                redisService.addBlacklistedToken(accessJit, ttl, TimeUnit.SECONDS);
+            }
+
+            // Xóa cookie
             Cookie refreshTokenCookie = new Cookie("refreshToken", null);
             refreshTokenCookie.setHttpOnly(true);
             refreshTokenCookie.setSecure(true);
             refreshTokenCookie.setPath("/");
-            refreshTokenCookie.setMaxAge(0); // Set maxAge = 0 để xóa cookie
+            refreshTokenCookie.setMaxAge(0);
             response.addCookie(refreshTokenCookie);
 
-            String username = signToken.getJWTClaimsSet().getSubject();
+            String username = refreshClaims.getSubject();
             Optional<User> user = userRepository.findByUsername(username);
             loginHistoryService.saveLogout(user.map(User::getId).orElse(null));
 
-        } catch (UnauthorizedException exception) {
-            log.info("Token already expired");
+        } catch (UnauthorizedException e) {
+            log.warn("Đăng xuất thất bại: {}", e.getMessage());
         }
     }
+
 
 //    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
 //        var signedJWT = verifyToken(request.getToken(), true);
