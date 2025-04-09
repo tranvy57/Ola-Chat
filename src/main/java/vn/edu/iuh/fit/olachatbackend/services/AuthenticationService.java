@@ -91,19 +91,32 @@ public class AuthenticationService {
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
+        String userId = null;
 
         log.info("Token: " + token);
 
         try {
-            verifyToken(token, false);
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
+            boolean isRefresh = "refresh".equals(type);
 
-            // Kiểm tra xem token có trong whitelist không
-            String jit = SignedJWT.parse(token).getJWTClaimsSet().getJWTID();
-            if (!redisService.isTokenWhitelisted(jit)) {
-                isValid = false;
+            verifyToken(token, isRefresh);
+
+            String jit = signedJWT.getJWTClaimsSet().getJWTID();
+
+            if (isRefresh) {
+                if (!redisService.isTokenWhitelisted(jit)) {
+                    isValid = false;
+                }
+            } else {
+                if (redisService.isTokenBlacklisted(jit)) {
+                    isValid = false;
+                }
             }
 
-        } catch (UnauthorizedException e) {
+            userId = signedJWT.getJWTClaimsSet().getSubject();
+
+        } catch (Exception e) {
             isValid = false;
         }
 
@@ -222,6 +235,7 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .claim("deviceId", deviceId)
+                .claim("type", isRefreshToken ? "refresh" : "access")
                 .build();
 
         Payload payload = new Payload(claimsSet.toJSONObject());
@@ -261,16 +275,21 @@ public class AuthenticationService {
             expiryTime = claims.getExpirationTime();
         }
 
+
+
         if (expiryTime == null || expiryTime.before(new Date())) {
             throw new UnauthorizedException("Token đã hết hạn");
         }
 
-        if (!redisService.isTokenWhitelisted(claims.getJWTID())) {
-            throw new UnauthorizedException("Token không hợp lệ hoặc đã bị thu hồi");
+        String jit = claims.getJWTID();
+
+        if (isRefresh && !redisService.isTokenWhitelisted(jit)) {
+            throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã bị thu hồi");
         }
 
-        if (!isRefresh && redisService.isTokenBlacklisted(claims.getJWTID())) {
-            throw new UnauthorizedException("Access Token đã bị thu hồi");
+        // ✅ Check chỉ cho access token: không bị đưa vào blacklist
+        if (!isRefresh && redisService.isTokenBlacklisted(jit)) {
+            throw new UnauthorizedException("Access token đã bị thu hồi");
         }
 
 
