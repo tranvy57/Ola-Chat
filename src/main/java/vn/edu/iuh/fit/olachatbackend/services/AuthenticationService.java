@@ -156,7 +156,11 @@ public class AuthenticationService {
 
         loginHistoryService.saveLogin(user.getId());
 
-        return AuthenticationResponse.builder().token(accessToken).authenticated(true).build();
+        return AuthenticationResponse
+                .builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .authenticated(true).build();
     }
 
     public void logout(LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
@@ -374,7 +378,10 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
-            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
+            var accessToken = generateToken(user, deviceId, false);
+            var refreshToken = generateToken(user, deviceId, true);
+
+            return new AuthenticationResponse(accessToken, refreshToken,true);
         } catch (Exception e) {
             throw new BadRequestException("Lỗi xác thực token: " + e.getMessage());
         }
@@ -402,7 +409,10 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
-            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
+            var accessTokenServerReturn = generateToken(user, deviceId, false);
+            var refreshToken = generateToken(user, deviceId, true);
+
+            return new AuthenticationResponse(accessTokenServerReturn, refreshToken,true);
         } catch (Exception e) {
             throw new BadRequestException("Lỗi xác thực Facebook");
         }
