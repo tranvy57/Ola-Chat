@@ -380,6 +380,9 @@ public class AuthenticationService {
 
             var accessToken = generateToken(user, deviceId, false);
             var refreshToken = generateToken(user, deviceId, true);
+            // Lưu refresh token vào Redis (whitelist)
+            String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
+            redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
 
             return new AuthenticationResponse(accessToken, refreshToken,true);
         } catch (Exception e) {
@@ -409,8 +412,12 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
+
             var accessTokenServerReturn = generateToken(user, deviceId, false);
             var refreshToken = generateToken(user, deviceId, true);
+            // Lưu refresh token vào Redis (whitelist)
+            String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
+            redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
 
             return new AuthenticationResponse(accessTokenServerReturn, refreshToken,true);
         } catch (Exception e) {
