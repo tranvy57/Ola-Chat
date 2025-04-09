@@ -14,8 +14,7 @@ public class EmailService {
     @Autowired
     private JavaMailSender emailSender;
 
-    public void sendOtpEmail(
-            String email, String otp) {
+    public void sendOtpEmail(String email, String otp) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("tieuvy5723@gmail.com");
         message.setTo(email);

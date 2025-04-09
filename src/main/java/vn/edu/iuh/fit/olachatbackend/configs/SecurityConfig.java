@@ -34,7 +34,8 @@ public class SecurityConfig {
             "/api/groups", "/api/groups/**",
             "/auth/**", "/api/users/me",
             "/twilio/**",
-            "/api/login-history/**", "/files/**"
+            "/api/login-history/**", "/files/**",
+            "/api/friends/**"
     };
 
     private final String[] ADMIN_ENDPOINTS = { "/api/users"

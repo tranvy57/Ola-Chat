@@ -1,6 +1,7 @@
 package vn.edu.iuh.fit.olachatbackend.controllers;
 
 import com.nimbusds.jose.JOSEException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +22,8 @@ public class AuthController {
     private AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    MessageResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
-        var result = authenticationService.authenticate(request);
+    MessageResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletResponse response) throws ParseException {
+        var result = authenticationService.authenticate(request, response);
         return MessageResponse.<AuthenticationResponse>builder()
                 .message("Đăng nhập thành công")
                 .data(result)
@@ -30,9 +31,10 @@ public class AuthController {
     }
 
     @PostMapping("/login/google")
-    public MessageResponse<AuthenticationResponse> googleLogin(@RequestBody Map<String, String> request) {
+    public MessageResponse<AuthenticationResponse> googleLogin(@RequestBody Map<String, String> request,
+                                                               @RequestParam("deviceId") String deviceId) {
         String idToken = request.get("idToken");
-        AuthenticationResponse response = authenticationService.loginWithGoogle(idToken);
+        AuthenticationResponse response = authenticationService.loginWithGoogle(idToken, deviceId);
         return MessageResponse.<AuthenticationResponse>builder()
                 .message("Đăng nhập thành công")
                 .data(response)
@@ -40,9 +42,10 @@ public class AuthController {
     }
 
     @PostMapping("/login/facebook")
-    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request) {
+    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request,
+                                                                 @RequestParam("deviceId") String deviceId) {
         String accessToken = request.get("accessToken");
-        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken);
+        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken, deviceId);
         return MessageResponse.<AuthenticationResponse>builder()
                 .message("Đăng nhập thành công")
                 .data(response)
@@ -60,22 +63,22 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    MessageResponse<Void> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
-        authenticationService.logout(request);
+    MessageResponse<Void> logout(@RequestBody LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+        authenticationService.logout(request, response);
         return MessageResponse.<Void>builder()
                 .message("Đăng xuất thành công")
                 .data(null)
                 .build();
     }
 
-    @PostMapping("/refresh")
-    ResponseEntity<MessageResponse<AuthenticationResponse>> refresh(@RequestBody @Valid RefreshRequest request) throws ParseException, JOSEException {
-        var result = authenticationService.refreshToken(request);
-        return ResponseEntity.ok(MessageResponse.<AuthenticationResponse>builder()
-                .message("Làm mới token thành công")
-                .data(result)
-                .build());
-    }
+//    @PostMapping("/refresh")
+//    ResponseEntity<MessageResponse<AuthenticationResponse>> refresh(@RequestBody @Valid RefreshRequest request) throws ParseException, JOSEException {
+//        var result = authenticationService.refreshToken(request);
+//        return ResponseEntity.ok(MessageResponse.<AuthenticationResponse>builder()
+//                .message("Làm mới token thành công")
+//                .data(result)
+//                .build());
+//    }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> sendOtp(@RequestParam String email) {

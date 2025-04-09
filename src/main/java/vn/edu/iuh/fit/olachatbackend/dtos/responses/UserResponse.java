@@ -20,6 +20,7 @@ public class UserResponse {
     String username;
     String displayName;
     String avatar;
+    String bio;
     Date dob;
     UserStatus status;
 

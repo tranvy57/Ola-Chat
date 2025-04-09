@@ -35,6 +35,7 @@ import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -169,6 +170,26 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.save(user);
 
         return userMapper.toUserResponse(updatedUser);
+    }
+  
+    @Override
+    public UserResponse searchUserByPhoneOrEmail(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            throw new IllegalArgumentException("Query không được để trống");
+        }
+
+        Optional<User> user;
+        if (query.contains("@")) {
+            user = userRepository.findByEmail(query);
+        } else {
+            user = userRepository.findByUsername(query);
+        }
+
+        if(user.isEmpty()) {
+            throw new NotFoundException("Không tìm thấy người dùng");
+        }
+
+        return userMapper.toUserResponse(user.get());
     }
 
 }
