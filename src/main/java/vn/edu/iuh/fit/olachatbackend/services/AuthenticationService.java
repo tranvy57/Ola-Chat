@@ -210,7 +210,7 @@ public class AuthenticationService {
             loginHistoryService.saveLogout(user.map(User::getId).orElse(null));
 
         } catch (UnauthorizedException e) {
-            log.warn("Đăng xuất thất bại: {}", e.getMessage());
+            throw new BadRequestException("Token không hợp lệ hoặc đã hết hạn");
         }
     }
 
@@ -286,8 +286,14 @@ public class AuthenticationService {
         Objects.requireNonNull(token, "Token không được null");
         Objects.requireNonNull(SIGNER_KEY, "SIGNER_KEY không được null");
 
+        SignedJWT signedJWT;
+        try {
+            signedJWT = SignedJWT.parse(token);
+        } catch (ParseException e) {
+            throw new UnauthorizedException("Token sai định dạng");
+        }
+
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-        SignedJWT signedJWT = SignedJWT.parse(token);
 
         if (!signedJWT.verify(verifier)) {
             throw new UnauthorizedException("Token không hợp lệ");
