@@ -25,11 +25,8 @@ import org.springframework.web.client.RestTemplate;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
-import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
-import vn.edu.iuh.fit.olachatbackend.entities.RefreshToken;
 import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
@@ -37,9 +34,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
-import vn.edu.iuh.fit.olachatbackend.repositories.RefreshTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 import java.text.ParseException;
@@ -56,8 +51,6 @@ public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
     @Autowired
     private RedisService redisService;
     @Autowired
