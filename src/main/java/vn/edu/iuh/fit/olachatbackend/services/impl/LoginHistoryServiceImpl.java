@@ -26,18 +26,18 @@ import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.LoginHistoryService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class LoginHistoryServiceImpl implements LoginHistoryService {
-
     private final LoginHistoryRepository loginHistoryRepository;
     private final UserRepository userRepository;
     private final LoginHistoryMapper loginHistoryMapper;
 
     @Override
-    public void saveLogin(String userId) {
+    public void saveLogin(String userId, String userAgent) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -45,6 +45,7 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         loginHistory.setUser(user);
         loginHistory.setLoginTime(LocalDateTime.now());
         loginHistory.setStatus(LoginHistoryStatus.ONLINE);
+        loginHistory.setUserAgent(userAgent);
 
         loginHistoryRepository.save(loginHistory);
     }
@@ -71,5 +72,16 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         return loginHistoryRepository.findFirstByUserIdOrderByLoginTimeDesc(userId)
                 .map(login -> login.getStatus() == LoginHistoryStatus.ONLINE)
                 .orElse(false);
+    }
+
+    @Override
+    public List<LoginHistoryDTO> getLoginHistory(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        List<LoginHistory> historyList = loginHistoryRepository.findAllByUserIdOrderByLoginTimeDesc(userId);
+        return historyList.stream()
+                .map(loginHistoryMapper::toDTO)
+                .toList();
     }
 }

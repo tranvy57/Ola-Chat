@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.edu.iuh.fit.olachatbackend.dtos.LoginHistoryDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserStatusResponse;
 import vn.edu.iuh.fit.olachatbackend.services.LoginHistoryService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/login-history")
@@ -31,6 +34,18 @@ public class LoginHistoryController {
     public LoginHistoryController(LoginHistoryService loginHistoryService) {
         this.loginHistoryService = loginHistoryService;
     }
+
+    @GetMapping("/{userId}")
+    public MessageResponse<List<LoginHistoryDTO>> getLoginHistory(@PathVariable String userId) {
+        List<LoginHistoryDTO> historyList = loginHistoryService.getLoginHistory(userId);
+        return MessageResponse.<List<LoginHistoryDTO>>builder()
+                .message("Lịch sử đăng nhập")
+                .data(historyList)
+                .success(true)
+                .statusCode(200)
+                .build();
+    }
+
 
     @GetMapping("/recent/{userId}")
     public ResponseEntity<LoginHistoryDTO> getRecentLogin(@PathVariable String userId) {
