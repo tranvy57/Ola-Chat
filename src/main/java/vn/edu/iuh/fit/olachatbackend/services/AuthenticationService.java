@@ -452,12 +452,23 @@ public class AuthenticationService {
             throw new NotFoundException("User không tồn tại");
         }
 
+        String otpRateLimitKey = "OTP_LIMIT:" + email;
+        Long lastSentTime = redisService.getLong(otpRateLimitKey);
+        long now = System.currentTimeMillis();
+
+        if (lastSentTime != null && (now - lastSentTime) < 3600_000) { // 1 giờ
+            throw new BadRequestException("Bạn chỉ có thể yêu cầu gửi OTP mỗi 1 giờ. Vui lòng thử lại sau.");
+        }
+
         String otpCode = OtpUtils.generateOtp();
 
         redisService.saveOtp(email, otpCode);
-
         emailService.sendOtpEmail(email, otpCode);
+
+        // Đánh dấu thời điểm gửi OTP, key sẽ hết hạn sau 1 giờ
+        redisService.setLong(otpRateLimitKey, now, 1, TimeUnit.HOURS);
     }
+
 
     public void resetPassword(ResetPasswordRequest otpRequest) {
         String otp = otpRequest.getOtp();
