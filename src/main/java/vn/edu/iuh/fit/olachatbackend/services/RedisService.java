@@ -55,6 +55,17 @@ public class RedisService {
         redisTemplate.delete("OTP:" + email);
     }
 
+    //    Giới hạn Gửi OTP mail mỗi 1 giờ 1 lầm quên mật khẩu tránh spam
+    // Lưu timestamp (đơn vị milliseconds) có thời hạn
+    public void setLong(String key, Long value, long duration, TimeUnit unit) {
+        redisTemplate.opsForValue().set(key, value.toString(), duration, unit);
+    }
+
+    // Lấy timestamp (đã lưu dưới dạng chuỗi số)
+    public Long getLong(String key) {
+        String value = redisTemplate.opsForValue().get(key);
+        return value != null ? Long.parseLong(value) : null;
+    }
 
 }
 

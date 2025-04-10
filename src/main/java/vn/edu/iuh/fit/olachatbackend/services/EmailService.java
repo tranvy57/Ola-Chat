@@ -1,25 +1,49 @@
 package vn.edu.iuh.fit.olachatbackend.services;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Slf4j
 public class EmailService {
-    @Autowired
-    private JavaMailSender emailSender;
 
-    public void sendOtpEmail(String email, String otp) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("tieuvy5723@gmail.com");
-        message.setTo(email);
-        message.setSubject("Reset Password - OTP Verification");
-        message.setText("OPT của bạn là: " + otp + ".OTP này sẽ hết hạn trong 5 phút.");
-        emailSender.send(message);
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public void sendOtpEmail(String toEmail, String otp) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject("🔐 Mã Xác Thực OTP - OlaChat Social");
+
+            String emailContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; padding: 20px; " +
+                    "border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>"
+                    + "<h2 style='color: #333;'>Xin chào,</h2>"
+                    + "<p>Bạn vừa yêu cầu mã OTP để xác thực tài khoản trên <strong>OlaChat</strong>.</p>"
+                    + "<p><strong>Mã OTP của bạn:</strong></p>"
+                    + "<h2 style='text-align: center; color: #d9534f; background-color: #fbeaea; padding: 10px; " +
+                    "border-radius: 5px;'>" + otp + "</h2>"
+                    + "<p><strong>Lưu ý:</strong> Mã OTP này có hiệu lực trong <strong>10 phút</strong>. " +
+                    "Vui lòng không chia sẻ mã này với bất kỳ ai.</p>"
+                    + "<p>Nếu bạn không yêu cầu OTP này, vui lòng bỏ qua email này.</p>"
+                    + "<hr style='border: none; border-top: 1px solid #ddd;'>"
+                    + "<p style='text-align: center; font-size: 14px; color: #555;'>"
+                    + "Trân trọng,<br><strong>Đội ngũ OlaChat</strong></p>"
+                    + "<p style='text-align: center; font-size: 12px; color: #777;'>"
+                    + "Email này được gửi tự động. Vui lòng không trả lời email này.</p>"
+                    + "</div>";
+
+            helper.setText(emailContent, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            log.error("Không thể gửi email: {}", e.getMessage());
+            throw new RuntimeException("Không thể gửi email: " + e.getMessage());
+        }
     }
 }
