@@ -60,10 +60,18 @@ public class User {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+
         if (this.status == null) {
             this.status = UserStatus.ACTIVE;
         }
+        if (this.role == null) {
+            this.role = Role.USER; // mặc định role là USER
+        }
+        if (this.authProvider == null) {
+            this.authProvider = AuthProvider.LOCAL; // mặc định authProvider là LOCAL
+        }
     }
+
 
     @PreUpdate
     public void preUpdate() {

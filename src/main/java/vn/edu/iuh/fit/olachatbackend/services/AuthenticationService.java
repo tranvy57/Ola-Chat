@@ -25,11 +25,8 @@ import org.springframework.web.client.RestTemplate;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AuthenticationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.requests.RefreshRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
-import vn.edu.iuh.fit.olachatbackend.dtos.InvalidatedToken;
-import vn.edu.iuh.fit.olachatbackend.entities.RefreshToken;
 import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
@@ -37,9 +34,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
-import vn.edu.iuh.fit.olachatbackend.repositories.RefreshTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 import java.text.ParseException;
@@ -56,8 +51,6 @@ public class AuthenticationService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
     @Autowired
     private RedisService redisService;
     @Autowired
@@ -156,7 +149,11 @@ public class AuthenticationService {
 
         loginHistoryService.saveLogin(user.getId());
 
-        return AuthenticationResponse.builder().token(accessToken).authenticated(true).build();
+        return AuthenticationResponse
+                .builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .authenticated(true).build();
     }
 
     public void logout(LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
@@ -374,7 +371,13 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
-            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
+            var accessToken = generateToken(user, deviceId, false);
+            var refreshToken = generateToken(user, deviceId, true);
+            // Lưu refresh token vào Redis (whitelist)
+            String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
+            redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
+
+            return new AuthenticationResponse(accessToken, refreshToken,true);
         } catch (Exception e) {
             throw new BadRequestException("Lỗi xác thực token: " + e.getMessage());
         }
@@ -402,7 +405,14 @@ public class AuthenticationService {
 
             loginHistoryService.saveLogin(user.getId());
 
-            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
+
+            var accessTokenServerReturn = generateToken(user, deviceId, false);
+            var refreshToken = generateToken(user, deviceId, true);
+            // Lưu refresh token vào Redis (whitelist)
+            String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
+            redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
+
+            return new AuthenticationResponse(accessTokenServerReturn, refreshToken,true);
         } catch (Exception e) {
             throw new BadRequestException("Lỗi xác thực Facebook");
         }
@@ -442,12 +452,23 @@ public class AuthenticationService {
             throw new NotFoundException("User không tồn tại");
         }
 
+        String otpRateLimitKey = "OTP_LIMIT:" + email;
+        Long lastSentTime = redisService.getLong(otpRateLimitKey);
+        long now = System.currentTimeMillis();
+
+        if (lastSentTime != null && (now - lastSentTime) < 3600_000) { // 1 giờ
+            throw new BadRequestException("Bạn chỉ có thể yêu cầu gửi OTP mỗi 1 giờ. Vui lòng thử lại sau.");
+        }
+
         String otpCode = OtpUtils.generateOtp();
 
         redisService.saveOtp(email, otpCode);
-
         emailService.sendOtpEmail(email, otpCode);
+
+        // Đánh dấu thời điểm gửi OTP, key sẽ hết hạn sau 1 giờ
+        redisService.setLong(otpRateLimitKey, now, 1, TimeUnit.HOURS);
     }
+
 
     public void resetPassword(ResetPasswordRequest otpRequest) {
         String otp = otpRequest.getOtp();
