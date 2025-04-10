@@ -469,7 +469,6 @@ public class AuthenticationService {
         redisService.setLong(otpRateLimitKey, now, 1, TimeUnit.HOURS);
     }
 
-
     public void resetPassword(ResetPasswordRequest otpRequest) {
         String otp = otpRequest.getOtp();
         String email = otpRequest.getEmail();
