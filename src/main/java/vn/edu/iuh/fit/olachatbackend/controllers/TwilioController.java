@@ -17,6 +17,17 @@ public class TwilioController {
 
     private final TwilioService twilioService;
 
+    @PostMapping("/send-otp")
+    public MessageResponse<Void> sendOtp(@RequestBody Map<String, String> request) {
+        String phone = request.get("phone");
+        String formattedPhone = FormatPhoneNumber.formatPhoneNumberTo84(phone);
+        twilioService.sendOtp(formattedPhone);
+        return MessageResponse.<Void>builder()
+                .message("Gửi SMS OTP thành công đến số điện thoại: " + formattedPhone)
+                .data(null)
+                .build();
+    }
+
     @PostMapping("/verify-otp")
     public ResponseEntity<MessageResponse<Void>> verifyOtp(@RequestBody Map<String, String> request) {
         String phone = request.get("phone");
@@ -44,5 +55,4 @@ public class TwilioController {
                     );
         }
     }
-
 }
