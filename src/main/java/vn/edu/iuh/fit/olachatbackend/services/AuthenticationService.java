@@ -147,7 +147,9 @@ public class AuthenticationService {
         refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(refreshTokenCookie);
 
-        loginHistoryService.saveLogin(user.getId());
+
+
+        loginHistoryService.saveLogin(user.getId(), deviceId);
 
         return AuthenticationResponse
                 .builder()
@@ -369,7 +371,7 @@ public class AuthenticationService {
                 throw new ConflicException("Email already exists with different provider");
             }
 
-            loginHistoryService.saveLogin(user.getId());
+            loginHistoryService.saveLogin(user.getId(), deviceId);
 
             var accessToken = generateToken(user, deviceId, false);
             var refreshToken = generateToken(user, deviceId, true);
@@ -403,7 +405,7 @@ public class AuthenticationService {
             User user = userRepository.findByEmail(email)
                     .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
 
-            loginHistoryService.saveLogin(user.getId());
+            loginHistoryService.saveLogin(user.getId(), deviceId);
 
 
             var accessTokenServerReturn = generateToken(user, deviceId, false);

@@ -25,4 +25,5 @@ public class LoginHistoryDTO {
     private LocalDateTime loginTime;
     private LocalDateTime logoutTime;
     private String status;
+    private String userAgent;
 }

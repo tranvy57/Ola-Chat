@@ -40,4 +40,7 @@ public class LoginHistory {
 
     @Enumerated(EnumType.STRING)
     private LoginHistoryStatus status;
+
+    @Column(name = "user_agent")
+    private String userAgent;
 }
