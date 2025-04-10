@@ -31,11 +31,13 @@ import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
+import vn.edu.iuh.fit.olachatbackend.services.RedisService;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +48,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final ParticipantRepository participantRepository;
     private final AuthenticationService authenticationService;
+    private final RedisService redisService;
 
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -160,14 +163,28 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
 
+        // Giới hạn 1 giờ/lần đổi mật khẩu
+        String redisKey = "PASSWORD_CHANGE_LIMIT:" + user.getId();
+        Long lastChanged = redisService.getLong(redisKey);
+        long now = System.currentTimeMillis();
+
+        if (lastChanged != null && (now - lastChanged) < 3600_000) {
+            throw new UnauthorizedException("Bạn chỉ có thể đổi mật khẩu mỗi 1 giờ. Vui lòng thử lại sau.");
+        }
+
+        // Kiểm tra mật khẩu cũ
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new UnauthorizedException("Mật khẩu cũ không chính xác");
         }
 
+        // Đổi mật khẩu và cập nhật
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(LocalDateTime.now());
 
         User updatedUser = userRepository.save(user);
+
+        // Cập nhật mốc thời gian đổi mật khẩu gần nhất vào Redis
+        redisService.setLong(redisKey, now, 1, TimeUnit.HOURS);
 
         return userMapper.toUserResponse(updatedUser);
     }
