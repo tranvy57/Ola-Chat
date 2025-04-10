@@ -29,8 +29,6 @@ public class UserRegisterRequest {
     @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotBlank
-    private String phone;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     @DateTimeFormat(pattern = "dd/MM/yyyy")
     Date dob;
