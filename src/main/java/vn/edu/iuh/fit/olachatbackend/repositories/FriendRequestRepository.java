@@ -28,8 +28,6 @@ public interface FriendRequestRepository extends JpaRepository<FriendRequest, St
     Optional<FriendRequest> findBySenderAndReceiver(User sender, User receiver);
     boolean existsBySenderAndReceiver(User sender, User receiver);
 
-    boolean existsBySenderAndReceiverAndStatus(User sender, User receiver, RequestStatus status);
-
     @Query("SELECT COUNT(f) > 0 FROM FriendRequest f WHERE " +
             "(f.sender = :user1 AND f.receiver = :user2 OR f.sender = :user2 AND f.receiver = :user1) " +
             "AND f.status = 'ACCEPTED'")

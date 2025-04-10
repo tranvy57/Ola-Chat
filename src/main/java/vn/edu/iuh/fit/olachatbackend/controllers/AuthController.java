@@ -30,25 +30,27 @@ public class AuthController {
                 .build();
     }
 
-//    @PostMapping("/login/google")
-//    public MessageResponse<AuthenticationResponse> googleLogin(@RequestBody Map<String, String> request) {
-//        String idToken = request.get("idToken");
-//        AuthenticationResponse response = authenticationService.loginWithGoogle(idToken);
-//        return MessageResponse.<AuthenticationResponse>builder()
-//                .message("Đăng nhập thành công")
-//                .data(response)
-//                .build();
-//    }
-//
-//    @PostMapping("/login/facebook")
-//    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request) {
-//        String accessToken = request.get("accessToken");
-//        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken);
-//        return MessageResponse.<AuthenticationResponse>builder()
-//                .message("Đăng nhập thành công")
-//                .data(response)
-//                .build();
-//    }
+    @PostMapping("/login/google")
+    public MessageResponse<AuthenticationResponse> googleLogin(@RequestBody Map<String, String> request,
+                                                               @RequestParam("deviceId") String deviceId) {
+        String idToken = request.get("idToken");
+        AuthenticationResponse response = authenticationService.loginWithGoogle(idToken, deviceId);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
+                .build();
+    }
+
+    @PostMapping("/login/facebook")
+    public MessageResponse<AuthenticationResponse> facebookLogin(@RequestBody Map<String, String> request,
+                                                                 @RequestParam("deviceId") String deviceId) {
+        String accessToken = request.get("accessToken");
+        AuthenticationResponse response = authenticationService.loginWithFacebook(accessToken, deviceId);
+        return MessageResponse.<AuthenticationResponse>builder()
+                .message("Đăng nhập thành công")
+                .data(response)
+                .build();
+    }
 
     @PostMapping("/introspect")
     MessageResponse<IntrospectResponse> authenticate(@RequestBody IntrospectRequest request)

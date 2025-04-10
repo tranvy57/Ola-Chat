@@ -17,19 +17,24 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.FriendRequestDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendRequestResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
 import vn.edu.iuh.fit.olachatbackend.entities.Friend;
 import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.RequestStatus;
-import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
-import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.exceptions.*;
+import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.FriendRequestRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.FriendRequestService;
+import vn.edu.iuh.fit.olachatbackend.services.NotificationService;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,6 +47,8 @@ public class FriendRequestServiceImpl implements FriendRequestService {
     private final FriendRequestRepository friendRequestRepository;
     private final UserRepository userRepository;
     private final FriendRepository friendRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
+    private final NotificationService notificationService;
 
     @Override
     public FriendRequestDTO sendFriendRequest(FriendRequestDTO friendRequestDTO) {
@@ -54,12 +61,23 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new NotFoundException("Người nhận không tồn tại."));
 
-        if (friendRequestRepository.existsBySenderAndReceiverAndStatus(sender, receiver, RequestStatus.PENDING)) {
+        if (friendRequestRepository.existsBySenderAndReceiver(sender, receiver)) {
             throw new ConflicException("Lời mời đã được gửi trước đó.");
         }
 
         if (friendRequestRepository.areFriends(sender, receiver)) {
             throw new ConflicException("Hai người đã là bạn bè.");
+        }
+
+        try {
+            DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
+            if (deviceToken != null) {
+                notificationService.sendFriendRequestNotification(senderId, receiverId, deviceToken.getToken());
+            } else {
+                throw new NotFoundException("Không tìm thấy token cho user: " + receiverId);
+            }
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Lỗi khi gửi thông báo");
         }
 
         FriendRequest friendRequest = new FriendRequest();
@@ -169,5 +187,41 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         friendRequest.setResponseAt(LocalDateTime.now());
 
         friendRequestRepository.save(friendRequest);
+    }
+
+    @Override
+    public void registerDevice(String userId, String token) {
+        DeviceToken deviceToken = deviceTokenRepository.findByUserId(userId);
+        if (deviceToken == null) {
+            deviceToken = new DeviceToken();
+            deviceToken.setUserId(userId);
+        }
+        deviceToken.setToken(token);
+        deviceTokenRepository.save(deviceToken);
+
+    }
+
+    @Override
+    public void unfriend(String userId, String friendId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> friendOpt = userRepository.findById(friendId);
+
+        if (userOpt.isEmpty() || friendOpt.isEmpty()) {
+            throw new NotFoundException("Không tìm thấy người dùng!");
+        }
+
+        Optional<Friend> relationOpt = friendRepository.findByUserIdAndFriendId(userId, friendId);
+        Optional<Friend> reverseRelationOpt = friendRepository.findByUserIdAndFriendId(friendId, userId);
+
+        boolean isFriend = relationOpt.map(r -> r.getStatus() == FriendStatus.ACTIVE).orElse(false)
+                || reverseRelationOpt.map(r -> r.getStatus() == FriendStatus.ACTIVE).orElse(false);
+
+        if (!isFriend) {
+            throw new NotFoundException("Hai người dùng không phải bạn bè!");
+        }
+
+        relationOpt.ifPresent(friendRepository::delete);
+        reverseRelationOpt.ifPresent(friendRepository::delete);
+
     }
 }

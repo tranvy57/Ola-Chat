@@ -16,7 +16,6 @@ import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,7 +42,6 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.repositories.RefreshTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -64,6 +62,9 @@ public class AuthenticationService {
     private RedisService redisService;
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private LoginHistoryService loginHistoryService;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -90,19 +91,32 @@ public class AuthenticationService {
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
+        String userId = null;
 
         log.info("Token: " + token);
 
         try {
-            verifyToken(token, false);
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
+            boolean isRefresh = "refresh".equals(type);
 
-            // Kiểm tra xem token có trong whitelist không
-            String jit = SignedJWT.parse(token).getJWTClaimsSet().getJWTID();
-            if (!redisService.isTokenWhitelisted(jit)) {
-                isValid = false;
+            verifyToken(token, isRefresh);
+
+            String jit = signedJWT.getJWTClaimsSet().getJWTID();
+
+            if (isRefresh) {
+                if (!redisService.isTokenWhitelisted(jit)) {
+                    isValid = false;
+                }
+            } else {
+                if (redisService.isTokenBlacklisted(jit)) {
+                    isValid = false;
+                }
             }
 
-        } catch (UnauthorizedException e) {
+            userId = signedJWT.getJWTClaimsSet().getSubject();
+
+        } catch (Exception e) {
             isValid = false;
         }
 
@@ -140,29 +154,66 @@ public class AuthenticationService {
         refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(refreshTokenCookie);
 
+        loginHistoryService.saveLogin(user.getId());
+
         return AuthenticationResponse.builder().token(accessToken).authenticated(true).build();
     }
 
     public void logout(LogoutRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+        String accessToken = request.getAccessToken();
+        String refreshToken = request.getRefreshToken();
+
         try {
-            var signToken = verifyToken(request.getToken(), true);
+            // Parse & verify refresh token
+            SignedJWT refreshSignedToken = verifyToken(refreshToken, true);
 
-            String jit = signToken.getJWTClaimsSet().getJWTID();
+            // Parse access token thủ công để lấy thông tin (vì có thể hết hạn)
+            SignedJWT accessSignedToken = SignedJWT.parse(accessToken);
+            JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+            if (!accessSignedToken.verify(verifier)) {
+                throw new BadRequestException("Access token không hợp lệ");
+            }
 
-            // Xóa token khỏi whitelist trong Redis
-            redisService.removeWhitelistedToken(jit);
+            // Lấy claims
+            JWTClaimsSet refreshClaims = refreshSignedToken.getJWTClaimsSet();
+            JWTClaimsSet accessClaims = accessSignedToken.getJWTClaimsSet();
 
+            String refreshDeviceId = refreshClaims.getStringClaim("deviceId");
+            String accessDeviceId = accessClaims.getStringClaim("deviceId");
+
+            if (!Objects.equals(refreshDeviceId, accessDeviceId)) {
+                throw new BadRequestException("Token không cùng thiết bị");
+            }
+
+            // Xóa refresh token khỏi whitelist
+            String refreshJit = refreshClaims.getJWTID();
+            redisService.removeWhitelistedToken(refreshJit);
+
+            // Thêm access token vào blacklist (chỉ khi có hạn sử dụng)
+            String accessJit = accessClaims.getJWTID();
+            Date expiration = accessClaims.getExpirationTime();
+            if (expiration != null && expiration.after(new Date())) {
+                long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000;
+                redisService.addBlacklistedToken(accessJit, ttl, TimeUnit.SECONDS);
+            }
+
+            // Xóa cookie
             Cookie refreshTokenCookie = new Cookie("refreshToken", null);
             refreshTokenCookie.setHttpOnly(true);
             refreshTokenCookie.setSecure(true);
             refreshTokenCookie.setPath("/");
-            refreshTokenCookie.setMaxAge(0); // Set maxAge = 0 để xóa cookie
+            refreshTokenCookie.setMaxAge(0);
             response.addCookie(refreshTokenCookie);
 
-        } catch (UnauthorizedException exception) {
-            log.info("Token already expired");
+            String username = refreshClaims.getSubject();
+            Optional<User> user = userRepository.findByUsername(username);
+            loginHistoryService.saveLogout(user.map(User::getId).orElse(null));
+
+        } catch (UnauthorizedException e) {
+            throw new BadRequestException("Token không hợp lệ hoặc đã hết hạn");
         }
     }
+
 
 //    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
 //        var signedJWT = verifyToken(request.getToken(), true);
@@ -215,6 +266,7 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .claim("deviceId", deviceId)
+                .claim("type", isRefreshToken ? "refresh" : "access")
                 .build();
 
         Payload payload = new Payload(claimsSet.toJSONObject());
@@ -234,8 +286,14 @@ public class AuthenticationService {
         Objects.requireNonNull(token, "Token không được null");
         Objects.requireNonNull(SIGNER_KEY, "SIGNER_KEY không được null");
 
+        SignedJWT signedJWT;
+        try {
+            signedJWT = SignedJWT.parse(token);
+        } catch (ParseException e) {
+            throw new UnauthorizedException("Token sai định dạng");
+        }
+
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-        SignedJWT signedJWT = SignedJWT.parse(token);
 
         if (!signedJWT.verify(verifier)) {
             throw new UnauthorizedException("Token không hợp lệ");
@@ -254,16 +312,21 @@ public class AuthenticationService {
             expiryTime = claims.getExpirationTime();
         }
 
+
+
         if (expiryTime == null || expiryTime.before(new Date())) {
             throw new UnauthorizedException("Token đã hết hạn");
         }
 
-        if (!redisService.isTokenWhitelisted(claims.getJWTID())) {
-            throw new UnauthorizedException("Token không hợp lệ hoặc đã bị thu hồi");
+        String jit = claims.getJWTID();
+
+        if (isRefresh && !redisService.isTokenWhitelisted(jit)) {
+            throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã bị thu hồi");
         }
 
-        if (!isRefresh && redisService.isTokenBlacklisted(claims.getJWTID())) {
-            throw new UnauthorizedException("Access Token đã bị thu hồi");
+        // ✅ Check chỉ cho access token: không bị đưa vào blacklist
+        if (!isRefresh && redisService.isTokenBlacklisted(jit)) {
+            throw new UnauthorizedException("Access token đã bị thu hồi");
         }
 
 
@@ -284,92 +347,94 @@ public class AuthenticationService {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
+    public AuthenticationResponse loginWithGoogle(String idToken, String deviceId) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(Arrays.asList(googleClientId, androidClientId))
+                    .build();
 
+            GoogleIdToken googleIdToken = verifier.verify(idToken);
+            if (googleIdToken == null) {
+                throw new UnauthorizedException("Invalid ID token");
+            }
 
-//    public AuthenticationResponse loginWithGoogle(String idToken) {
-//        try {
-//            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
-//                    .setAudience(Arrays.asList(googleClientId, androidClientId))
-//                    .build();
-//
-//            GoogleIdToken googleIdToken = verifier.verify(idToken);
-//            if (googleIdToken == null) {
-//                throw new UnauthorizedException("Invalid ID token");
-//            }
-//
-//            // Lấy thông tin người dùng từ payload
-//            GoogleIdToken.Payload payload = googleIdToken.getPayload();
-//            String email = payload.getEmail();
-//            String name = (String) payload.get("name");
-//            String picture = (String) payload.get("picture");
-//
-//            // Kiểm tra hoặc tạo người dùng
-//            User user = userRepository.findByEmail(email)
-//                    .orElseGet(() -> createGoogleUser(email, name, picture));
-//
-//            if (user.getAuthProvider() != AuthProvider.GOOGLE) {
-//                throw new ConflicException("Email already exists with different provider");
-//            }
-//
-//            return new AuthenticationResponse(generateToken(user), true);
-//        } catch (Exception e) {
-//            throw new InternalServerErrorException("Error verifying token: " + e.getMessage());
-//        }
-//    }
-//
-//    public AuthenticationResponse loginWithFacebook(String accessToken) {
-//        try {
-//            String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + accessToken;
-//            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-//
-//            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-//                throw new UnauthorizedException("Token không hợp lệ");
-//            }
-//
-//            // Lấy dữ liệu từ Facebook API
-//            Map<String, Object> data = response.getBody();
-//            String facebookId = (String) data.get("id");
-//            String name = (String) data.get("name");
-//            String email = (String) data.get("email");
-//            String picture = (String) ((Map<String, Object>) ((Map<String, Object>) data.get("picture")).get("data")).get("url");
-//
-//            // Kiểm tra hoặc tạo người dùng mới
-//            User user = userRepository.findByEmail(email)
-//                    .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
-//
-//            return new AuthenticationResponse(generateToken(user), true);
-//        } catch (Exception e) {
-//            throw new UnauthorizedException("Lỗi xác thực Facebook");
-//        }
-//    }
-//
-//    private User createGoogleUser(String email, String name, String picture) {
-//        User user = User.builder()
-//                .email(email)
-//                .username(email) // Dùng email làm username
-//                .displayName(name)
-//                .avatar(picture)
-//                .authProvider(AuthProvider.GOOGLE)
-//                .status(UserStatus.ACTIVE)
-//                .role(Role.USER)
-//                .createdAt(LocalDateTime.now())
-//                .build();
-//        return userRepository.save(user);
-//    }
-//
-//    private User createFacebookUser(String email, String name, String picture, String facebookId) {
-//        User user = User.builder()
-//                .email(email)
-//                .username(email)
-//                .displayName(name)
-//                .avatar(picture)
-//                .authProvider(AuthProvider.FACEBOOK)
-//                .status(UserStatus.ACTIVE)
-//                .role(Role.USER)
-//                .createdAt(LocalDateTime.now())
-//                .build();
-//        return userRepository.save(user);
-//    }
+            // Lấy thông tin người dùng từ payload
+            GoogleIdToken.Payload payload = googleIdToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
+
+            // Kiểm tra hoặc tạo người dùng
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> createGoogleUser(email, name, picture));
+
+            if (user.getAuthProvider() != AuthProvider.GOOGLE) {
+                throw new ConflicException("Email already exists with different provider");
+            }
+
+            loginHistoryService.saveLogin(user.getId());
+
+            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
+        } catch (Exception e) {
+            throw new BadRequestException("Lỗi xác thực token: " + e.getMessage());
+        }
+    }
+
+    public AuthenticationResponse loginWithFacebook(String accessToken, String deviceId) {
+        try {
+            String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + accessToken;
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new UnauthorizedException("Token không hợp lệ");
+            }
+
+            // Lấy dữ liệu từ Facebook API
+            Map<String, Object> data = response.getBody();
+            String facebookId = (String) data.get("id");
+            String name = (String) data.get("name");
+            String email = (String) data.get("email");
+            String picture = (String) ((Map<String, Object>) ((Map<String, Object>) data.get("picture")).get("data")).get("url");
+
+            // Kiểm tra hoặc tạo người dùng mới
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> createFacebookUser(email, name, picture, facebookId));
+
+            loginHistoryService.saveLogin(user.getId());
+
+            return new AuthenticationResponse(generateToken(user, deviceId, false), true);
+        } catch (Exception e) {
+            throw new BadRequestException("Lỗi xác thực Facebook");
+        }
+    }
+
+    private User createGoogleUser(String email, String name, String picture) {
+        User user = User.builder()
+                .email(email)
+                .username(email) // Dùng email làm username
+                .displayName(name)
+                .avatar(picture)
+                .authProvider(AuthProvider.GOOGLE)
+                .status(UserStatus.ACTIVE)
+                .role(Role.USER)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return userRepository.save(user);
+    }
+
+    private User createFacebookUser(String email, String name, String picture, String facebookId) {
+        User user = User.builder()
+                .email(email)
+                .username(email)
+                .displayName(name)
+                .avatar(picture)
+                .authProvider(AuthProvider.FACEBOOK)
+                .status(UserStatus.ACTIVE)
+                .role(Role.USER)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return userRepository.save(user);
+    }
 
     public void processForgotPassword(String email) {
         Optional<User> user = userRepository.findByEmail(email);
@@ -412,4 +477,5 @@ public class AuthenticationService {
         redisService.deleteOtp(email);
 
     }
+
 }
