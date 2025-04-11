@@ -24,7 +24,7 @@ import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/files")
 public class FileController {
     private final CloudinaryService cloudinaryService;
     private final FileRepository fileRepository;
