@@ -9,6 +9,8 @@ package vn.edu.iuh.fit.olachatbackend.dtos.requests;/*
  * @version: 1.0
  */
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Size;
@@ -19,33 +21,24 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.format.annotation.DateTimeFormat;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserUpdateInfoRequest {
-    @Size(min = 3, message = "Tên đăng nhập phải có ít nhất 3 ký tự")
-    String username;
-
-    @Size(min=6, message = "Mật khẩu phải có ít nhất 6 ký tự")
-    String password;
-
-    @NotBlank(message = "Tên hiển thị không được để trống")
     private String displayName;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
-    private String email;
-
-    @NotBlank
-    private String avatar;
-
-    LocalDateTime dob;
-
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    @DateTimeFormat(pattern = "dd/MM/yyyy")
+    Date dob;
+    String bio;
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 }

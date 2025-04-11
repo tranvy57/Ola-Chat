@@ -46,7 +46,6 @@ public class LoginHistoryController {
                 .build();
     }
 
-
     @GetMapping("/recent/{userId}")
     public ResponseEntity<LoginHistoryDTO> getRecentLogin(@PathVariable String userId) {
         LoginHistoryDTO loginHistoryDTO = loginHistoryService.getRecentLogin(userId);
