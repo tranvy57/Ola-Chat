@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.ChangePasswordRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendResponse;
 import jakarta.validation.Valid;
@@ -85,7 +86,7 @@ public class UserController {
                 .build();
     }
 
-    //Cập nhật thông tin cá nhân (Display_name, Dob)
+    //Cập nhật thông tin cá nhân (Display_name, Dob, Bio, Status)
     @PutMapping("/my-update")
     public MessageResponse<UserResponse> updateMyInfo(@RequestBody @Valid UserUpdateInfoRequest request) {
         return MessageResponse.<UserResponse>builder()
@@ -105,10 +106,10 @@ public class UserController {
 
     //Change password
     @PutMapping("/change-password")
-    public MessageResponse<UserResponse> changePassword(@RequestParam String oldPassword, @RequestParam String newPassword) {
+    public MessageResponse<UserResponse> changePassword(@RequestBody ChangePasswordRequest request) {
         return MessageResponse.<UserResponse>builder()
                 .message("Đổi mật khẩu thành công")
-                .data(userService.changePassword(oldPassword, newPassword))
+                .data(userService.changePassword(request.getOldPassword(), request.getNewPassword()))
                 .build();
     }
 
