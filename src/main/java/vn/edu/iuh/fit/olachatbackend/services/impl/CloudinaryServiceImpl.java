@@ -116,4 +116,14 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             return fileData;
         }
     }
+
+    @Override
+    public String uploadImage(MultipartFile file) throws IOException {
+        Map<String, Object> options = ObjectUtils.asMap(
+                "folder", "travel"
+        );
+
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
+        return uploadResult.get("url").toString();
+    }
 }

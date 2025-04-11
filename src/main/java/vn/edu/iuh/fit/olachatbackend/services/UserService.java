@@ -12,11 +12,13 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface UserService {
@@ -45,5 +47,7 @@ public interface UserService {
     //Change password
     UserResponse changePassword(String oldPassword, String newPassword);
     UserResponse searchUserByPhoneOrEmail(String query);
+
+    public UserResponse updateUserAvatar( MultipartFile avatar) throws IOException;
 
 }

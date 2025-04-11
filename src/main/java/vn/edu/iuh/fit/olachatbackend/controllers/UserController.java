@@ -6,7 +6,10 @@
 
 package vn.edu.iuh.fit.olachatbackend.controllers;
 
+import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendResponse;
 import jakarta.validation.Valid;
@@ -16,6 +19,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.services.FriendService;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
+import java.io.IOException;
 import java.util.List;
 
 /*
@@ -113,6 +117,17 @@ public class UserController {
         return MessageResponse.<UserResponse>builder()
                 .message("Tìm thấy người dùng")
                 .data(userService.searchUserByPhoneOrEmail(query))
+                .build();
+    }
+
+    @PutMapping(value = "/my-avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public MessageResponse<UserResponse> updateMeAvatar( @RequestPart("avatar") MultipartFile avatar) throws IOException {
+        UserResponse updatedUser = userService.updateUserAvatar(avatar);
+        return MessageResponse.<UserResponse>builder()
+                .statusCode(200)
+                .success(true)
+                .message("Cập nhật ảnh đại diện thành công.")
+                .data(updatedUser)
                 .build();
     }
 }
