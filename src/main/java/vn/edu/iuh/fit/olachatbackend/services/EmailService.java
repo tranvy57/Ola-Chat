@@ -8,6 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+
 @Service
 @Slf4j
 public class EmailService {
@@ -18,11 +20,14 @@ public class EmailService {
     public void sendOtpEmail(String toEmail, String otp) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+
+            helper.setFrom("tieuvy5723@gmail.com");
             helper.setTo(toEmail);
             helper.setSubject("🔐 Mã Xác Thực OTP - OlaChat Social");
 
-            String emailContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; padding: 20px; " +
+            String html = "<div style='font-family: Arial, sans-serif; max-width: 600px; padding: 20px; " +
                     "border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>"
                     + "<h2 style='color: #333;'>Xin chào,</h2>"
                     + "<p>Bạn vừa yêu cầu mã OTP để xác thực tài khoản trên <strong>OlaChat</strong>.</p>"
@@ -39,10 +44,12 @@ public class EmailService {
                     + "Email này được gửi tự động. Vui lòng không trả lời email này.</p>"
                     + "</div>";
 
-            helper.setText(emailContent, true);
+            helper.setText(html, true); // true: content is HTML
+
             mailSender.send(message);
-        } catch (MessagingException e) {
-            log.error("Không thể gửi email: {}", e.getMessage());
+
+        } catch (Exception e) {
+            log.error("Không thể gửi email: {}", e.getMessage(), e);
             throw new RuntimeException("Không thể gửi email: " + e.getMessage());
         }
     }
@@ -50,7 +57,10 @@ public class EmailService {
     public void sendVerifyNewEmail(String toEmail, String otp) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+
+            helper.setFrom("tieuvy5723@gmail.com");
             helper.setTo(toEmail);
             helper.setSubject("📧 Xác Thực Email Mới - OlaChat");
 
@@ -71,9 +81,10 @@ public class EmailService {
                     + "</div>";
 
             helper.setText(emailContent, true);
+
             mailSender.send(message);
-        } catch (MessagingException e) {
-            log.error("Không thể gửi email xác thực cập nhật email: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Không thể gửi email xác thực cập nhật email: {}", e.getMessage(), e);
             throw new RuntimeException("Không thể gửi email xác thực cập nhật email: " + e.getMessage());
         }
     }
