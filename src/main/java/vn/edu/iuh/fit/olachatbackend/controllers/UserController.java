@@ -130,4 +130,17 @@ public class UserController {
                 .data(updatedUser)
                 .build();
     }
+
+    @PutMapping("/update-email")
+    public MessageResponse<Void> sendOtpUpdateEmail(@RequestParam String newEmail) {
+        userService.requestEmailUpdate(newEmail);
+        return MessageResponse.<Void>builder()
+                .message("Đã gửi OPT về mail của bạn, vui lòng kiểm tra.")
+                .build();
+
+    }
+
+
+
+
 }

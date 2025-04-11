@@ -309,7 +309,6 @@ public class AuthenticationService {
         }
 
 
-
         if (expiryTime == null || expiryTime.before(new Date())) {
             throw new UnauthorizedException("Token đã hết hạn");
         }
@@ -455,9 +454,9 @@ public class AuthenticationService {
         Long lastSentTime = redisService.getLong(otpRateLimitKey);
         long now = System.currentTimeMillis();
 
-        if (lastSentTime != null && (now - lastSentTime) < 3600_000) { // 1 giờ
-            throw new BadRequestException("Bạn chỉ có thể yêu cầu gửi OTP mỗi 1 giờ. Vui lòng thử lại sau.");
-        }
+//        if (lastSentTime != null && (now - lastSentTime) < 3600_000) { // 1 giờ
+//            throw new BadRequestException("Bạn chỉ có thể yêu cầu gửi OTP mỗi 1 giờ. Vui lòng thử lại sau.");
+//        }
 
         String otpCode = OtpUtils.generateOtp();
 
