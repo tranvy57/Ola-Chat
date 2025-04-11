@@ -16,9 +16,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.olachatbackend.entities.LoginHistory;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface LoginHistoryRepository extends JpaRepository<LoginHistory, String> {
     Optional<LoginHistory> findFirstByUserIdOrderByLoginTimeDesc(String userId);
+    List<LoginHistory> findAllByUserIdOrderByLoginTimeDesc(String userId);
 }

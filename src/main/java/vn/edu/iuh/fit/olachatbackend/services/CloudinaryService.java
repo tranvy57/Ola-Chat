@@ -13,4 +13,5 @@ public interface CloudinaryService {
     void deleteFile(String publicId) throws IOException;
     //download file
     byte[] downloadFile(String publicId) throws Exception;
+    public String uploadImage(MultipartFile file) throws IOException;
 }

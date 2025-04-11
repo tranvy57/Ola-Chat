@@ -12,11 +12,13 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  * @version:    1.0
  */
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
@@ -31,11 +33,16 @@ import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
+import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
+import vn.edu.iuh.fit.olachatbackend.services.RedisService;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +53,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final ParticipantRepository participantRepository;
     private final AuthenticationService authenticationService;
+    private final RedisService redisService;
+    private final CloudinaryService cloudinaryService;
 
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -143,9 +152,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
 
+        user.setBio(request.getBio());
+        user.setDob(request.getDob().atStartOfDay());
+        user.setStatus(request.getStatus());
         user.setDisplayName(request.getDisplayName());
-        user.setDob(request.getDob());
-        user.setUpdatedAt(LocalDateTime.now());
+
 
         User updatedUser = userRepository.save(user);
 
@@ -160,14 +171,28 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
 
+        // Giới hạn 1 giờ/lần đổi mật khẩu
+        String redisKey = "PASSWORD_CHANGE_LIMIT:" + user.getId();
+        Long lastChanged = redisService.getLong(redisKey);
+        long now = System.currentTimeMillis();
+
+        if (lastChanged != null && (now - lastChanged) < 3600_000) {
+            throw new UnauthorizedException("Bạn chỉ có thể đổi mật khẩu mỗi 1 giờ. Vui lòng thử lại sau.");
+        }
+
+        // Kiểm tra mật khẩu cũ
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new UnauthorizedException("Mật khẩu cũ không chính xác");
         }
 
+        // Đổi mật khẩu và cập nhật
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(LocalDateTime.now());
 
         User updatedUser = userRepository.save(user);
+
+        // Cập nhật mốc thời gian đổi mật khẩu gần nhất vào Redis
+        redisService.setLong(redisKey, now, 1, TimeUnit.HOURS);
 
         return userMapper.toUserResponse(updatedUser);
     }
@@ -190,6 +215,21 @@ public class UserServiceImpl implements UserService {
         }
 
         return userMapper.toUserResponse(user.get());
+    }
+
+    @Override
+    public UserResponse updateUserAvatar( MultipartFile avatar) throws IOException {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        String avatarUrl = cloudinaryService.uploadImage(avatar);
+        user.setAvatar(avatarUrl);
+
+        userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 
 }
