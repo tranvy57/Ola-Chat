@@ -24,6 +24,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.format.annotation.DateTimeFormat;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -37,7 +38,7 @@ public class UserUpdateInfoRequest {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     @DateTimeFormat(pattern = "dd/MM/yyyy")
-    Date dob;
+    private LocalDate dob;
     String bio;
     @Enumerated(EnumType.STRING)
     private UserStatus status;
