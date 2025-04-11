@@ -32,10 +32,8 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
-import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
-import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
-import vn.edu.iuh.fit.olachatbackend.services.RedisService;
-import vn.edu.iuh.fit.olachatbackend.services.UserService;
+import vn.edu.iuh.fit.olachatbackend.services.*;
+import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -55,6 +53,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationService authenticationService;
     private final RedisService redisService;
     private final CloudinaryService cloudinaryService;
+    private final EmailService emailService;
 
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -245,5 +244,23 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         return userMapper.toUserResponse(user);
     }
+
+    public void requestEmailUpdate(String newEmail) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        String userId = user.getId();
+        String otpCode = OtpUtils.generateOtp();
+        String currentEmail = user.getEmail();
+
+        redisService.saveEmailUpdateOtp(userId, otpCode, newEmail);
+        emailService.sendVerifyNewEmail(currentEmail, otpCode);
+    }
+
+
+
 
 }
