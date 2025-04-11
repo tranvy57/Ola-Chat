@@ -85,7 +85,7 @@ public class UserController {
                 .build();
     }
 
-    //Cập nhật thông tin cá nhân (Display_name, Dob)
+    //Cập nhật thông tin cá nhân (Display_name, Dob, Bio, Status)
     @PutMapping("/my-update")
     public MessageResponse<UserResponse> updateMyInfo(@RequestBody @Valid UserUpdateInfoRequest request) {
         return MessageResponse.<UserResponse>builder()
