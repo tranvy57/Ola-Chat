@@ -213,42 +213,39 @@ public class AuthenticationService {
         }
     }
 
+    public AuthenticationResponse refreshToken(String refreshToken, HttpServletResponse response) throws ParseException, JOSEException {
+        // 1. Verify refreshToken
+        var signedJWT = verifyToken(refreshToken, true);
 
-//    public AuthenticationResponse refreshToken(RefreshRequest request, HttpServletResponse response) throws ParseException, JOSEException {
-//        var signedJWT = verifyToken(request.getToken(), true);
-//
-//        var username = signedJWT.getJWTClaimsSet().getSubject();
-//        var deviceId = signedJWT.getJWTClaimsSet().getStringClaim("deviceId");
-//
-//        var user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new UnauthorizedException("Sai tên đăng nhập hoặc mật khẩu"));
-//
-//        // Kiểm tra token có trong Redis whitelist không
-//        String jit = signedJWT.getJWTClaimsSet().getJWTID();
-//        if (!redisService.isTokenWhitelisted(jit)) {
-//            throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã hết hạn");
-//        }
-//
-//        var newAccessToken = generateToken(user, deviceId, false);
-//        var newRefreshToken = generateToken(user, deviceId, true);
-//
-//        // Cập nhật refresh token mới vào Redis whitelist
-//        String newJit = SignedJWT.parse(newRefreshToken).getJWTClaimsSet().getJWTID();
-//        redisService.saveWhitelistedToken(newJit, newRefreshToken, 7, TimeUnit.DAYS);
-//
-//        // Xóa token cũ khỏi whitelist
-//        redisService.removeWhitelistedToken(jit);
-//
-//        // Cập nhật refresh token mới vào cookie
-//        Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
-//        refreshTokenCookie.setHttpOnly(true);
-//        refreshTokenCookie.setSecure(true);
-//        refreshTokenCookie.setPath("/");
-//        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
-//        response.addCookie(refreshTokenCookie);
-//
-//        return AuthenticationResponse.builder().token(newAccessToken).authenticated(true).build();
-//    }
+        var username = signedJWT.getJWTClaimsSet().getSubject();
+        var deviceId = signedJWT.getJWTClaimsSet().getStringClaim("deviceId");
+
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("Người dùng không tồn tại"));
+
+        // 2. Kiểm tra trong Redis
+        String oldJit = signedJWT.getJWTClaimsSet().getJWTID();
+        if (!redisService.isTokenWhitelisted(oldJit)) {
+            throw new UnauthorizedException("Refresh token không hợp lệ hoặc đã bị thu hồi");
+        }
+
+        // 3. Sinh accessToken mới
+        var newAccessToken = generateToken(user, deviceId, false);
+
+        // 4. Tuỳ chọn: tạo refreshToken mới (an toàn hơn)
+        var newRefreshToken = generateToken(user, deviceId, true);
+        String newJit = SignedJWT.parse(newRefreshToken).getJWTClaimsSet().getJWTID();
+
+        // 5. Cập nhật Redis
+        redisService.removeWhitelistedToken(oldJit); // xóa cũ
+        redisService.saveWhitelistedToken(newJit, newRefreshToken, 7, TimeUnit.DAYS); // lưu mới
+
+        return AuthenticationResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .authenticated(true)
+                .build();
+    }
 
     private String generateToken(User user, String deviceId, boolean isRefreshToken) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
