@@ -152,11 +152,25 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
 
-        user.setBio(request.getBio());
-        user.setDob(request.getDob().atStartOfDay());
-        user.setStatus(request.getStatus());
-        user.setDisplayName(request.getDisplayName());
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
 
+        if (request.getDob() != null) {
+            user.setDob(request.getDob().atStartOfDay());
+        }
+
+        if (request.getStatus() != null) {
+            user.setStatus(request.getStatus());
+        }
+
+        if (request.getDisplayName() != null) {
+            user.setDisplayName(request.getDisplayName());
+        }
+
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
 
         User updatedUser = userRepository.save(user);
 
