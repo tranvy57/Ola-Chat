@@ -71,14 +71,16 @@ public class AuthController {
                 .build();
     }
 
-//    @PostMapping("/refresh")
-//    ResponseEntity<MessageResponse<AuthenticationResponse>> refresh(@RequestBody @Valid RefreshRequest request) throws ParseException, JOSEException {
-//        var result = authenticationService.refreshToken(request);
-//        return ResponseEntity.ok(MessageResponse.<AuthenticationResponse>builder()
-//                .message("Làm mới token thành công")
-//                .data(result)
-//                .build());
-//    }
+    @PostMapping("/refresh")
+    public ResponseEntity<MessageResponse<AuthenticationResponse>> refreshToken(@RequestBody RefreshTokenRequest request, HttpServletResponse response) throws ParseException, JOSEException {
+        var result = authenticationService.refreshToken(request.getRefreshToken(), response);
+        return ResponseEntity.ok(
+                MessageResponse.<AuthenticationResponse>builder()
+                        .message("Làm mới token thành công")
+                        .data(result)
+                        .build()
+        );
+    }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> sendOtp(@RequestParam String email) {
