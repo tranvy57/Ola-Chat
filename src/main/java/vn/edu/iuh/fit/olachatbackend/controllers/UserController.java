@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.services.FriendService;
 import vn.edu.iuh.fit.olachatbackend.services.UserService;
 
@@ -131,13 +132,22 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping("/update-email")
+    @PostMapping("/update-email")
     public MessageResponse<Void> sendOtpUpdateEmail(@RequestParam String newEmail) {
         userService.requestEmailUpdate(newEmail);
         return MessageResponse.<Void>builder()
                 .message("Đã gửi OPT về mail của bạn, vui lòng kiểm tra.")
                 .build();
 
+    }
+
+    @PostMapping("/verify-update-email")
+    public MessageResponse<UserResponse> verifyUpdateEmail(@RequestParam String otp) {
+        UserResponse data = userService.verifyAndUpdateEmail(otp);
+        return MessageResponse.<UserResponse>builder()
+                .message("Email đã được cập nhật thành công.")
+                .data(data)
+                .build();
     }
 
 

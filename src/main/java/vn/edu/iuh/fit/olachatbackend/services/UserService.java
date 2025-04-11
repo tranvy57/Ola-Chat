@@ -51,5 +51,6 @@ public interface UserService {
     public UserResponse updateUserAvatar( MultipartFile avatar) throws IOException;
 
     public void requestEmailUpdate( String newEmail);
+    public UserResponse verifyAndUpdateEmail(String otpInput);
 
 }
