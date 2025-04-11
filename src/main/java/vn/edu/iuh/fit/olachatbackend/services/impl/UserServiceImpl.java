@@ -239,10 +239,9 @@ public class UserServiceImpl implements UserService {
 
         String userId = user.getId();
         String otpCode = OtpUtils.generateOtp();
-        String currentEmail = user.getEmail();
 
         redisService.saveEmailUpdateOtp(userId, otpCode, newEmail);
-        emailService.sendVerifyNewEmail(currentEmail, otpCode);
+        emailService.sendVerifyNewEmail(newEmail, otpCode);
     }
 
 
