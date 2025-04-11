@@ -33,6 +33,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String username;
+    private String nickname;
     private String password;
     private String displayName;
 
