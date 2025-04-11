@@ -29,7 +29,7 @@ public class EmailService {
                     + "<p><strong>Mã OTP của bạn:</strong></p>"
                     + "<h2 style='text-align: center; color: #d9534f; background-color: #fbeaea; padding: 10px; " +
                     "border-radius: 5px;'>" + otp + "</h2>"
-                    + "<p><strong>Lưu ý:</strong> Mã OTP này có hiệu lực trong <strong>10 phút</strong>. " +
+                    + "<p><strong>Lưu ý:</strong> Mã OTP này có hiệu lực trong <strong>5 phút</strong>. " +
                     "Vui lòng không chia sẻ mã này với bất kỳ ai.</p>"
                     + "<p>Nếu bạn không yêu cầu OTP này, vui lòng bỏ qua email này.</p>"
                     + "<hr style='border: none; border-top: 1px solid #ddd;'>"
