@@ -13,6 +13,8 @@ package vn.edu.iuh.fit.olachatbackend.repositories;
  */
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.olachatbackend.entities.LoginHistory;
 
@@ -23,4 +25,8 @@ import java.util.Optional;
 public interface LoginHistoryRepository extends JpaRepository<LoginHistory, String> {
     Optional<LoginHistory> findFirstByUserIdOrderByLoginTimeDesc(String userId);
     List<LoginHistory> findAllByUserIdOrderByLoginTimeDesc(String userId);
+
+    @Query("SELECT DISTINCT lh.userAgent FROM LoginHistory lh WHERE lh.user.id = :userId")
+    List<String> findDistinctUserAgentsByUserId(@Param("userId") String userId);
+
 }
