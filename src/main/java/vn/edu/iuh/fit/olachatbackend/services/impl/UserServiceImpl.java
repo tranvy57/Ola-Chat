@@ -26,6 +26,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Participant;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
@@ -245,6 +246,8 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(user);
     }
 
+
+    @Override
     public void requestEmailUpdate(String newEmail) {
         var context = SecurityContextHolder.getContext();
         String currentUsername = context.getAuthentication().getName();
@@ -254,13 +257,37 @@ public class UserServiceImpl implements UserService {
 
         String userId = user.getId();
         String otpCode = OtpUtils.generateOtp();
-        String currentEmail = user.getEmail();
 
         redisService.saveEmailUpdateOtp(userId, otpCode, newEmail);
-        emailService.sendVerifyNewEmail(currentEmail, otpCode);
+        emailService.sendVerifyNewEmail(newEmail, otpCode);
     }
 
+    @Override
+    public UserResponse verifyAndUpdateEmail(String otpInput) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
 
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng."));
 
+        String userId = user.getId();
 
+        String storedOtp = redisService.getEmailUpdateOtp(userId);
+        String newEmail = redisService.getEmailUpdateNewEmail(userId);
+
+        if (storedOtp == null || newEmail == null) {
+            throw new BadRequestException("OTP đã hết hạn hoặc không hợp lệ.");
+        }
+
+        if (!storedOtp.equals(otpInput)) {
+            throw new BadRequestException("Mã OTP không chính xác.");
+        }
+
+        user.setEmail(newEmail);
+        User savedUser = userRepository.save(user);
+
+        redisService.deleteEmailUpdateOtp(userId);
+
+        return userMapper.toUserResponse(savedUser);
+    }
 }
