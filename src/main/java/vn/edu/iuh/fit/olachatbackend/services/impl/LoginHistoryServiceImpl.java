@@ -23,6 +23,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.mappers.LoginHistoryMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.LoginHistoryRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
+import vn.edu.iuh.fit.olachatbackend.services.EmailService;
 import vn.edu.iuh.fit.olachatbackend.services.LoginHistoryService;
 
 import java.time.LocalDateTime;
@@ -35,11 +36,23 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final UserRepository userRepository;
     private final LoginHistoryMapper loginHistoryMapper;
+    private final EmailService emailService;
 
     @Override
     public void saveLogin(String userId, String userAgent) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Kiểm tra thiết bị có từng được sử dụng chưa
+        boolean isNewDevice = loginHistoryRepository
+                .findDistinctUserAgentsByUserId(userId)
+                .stream()
+                .noneMatch(agent -> agent.equals(userAgent));
+
+        // Nếu thiết bị lạ => gửi cảnh báo qua email
+        if (isNewDevice) {
+            emailService.sendLoginAlert(user.getEmail(), userAgent);
+        }
 
         LoginHistory loginHistory = new LoginHistory();
         loginHistory.setUser(user);
