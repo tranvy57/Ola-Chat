@@ -94,4 +94,32 @@ public class EmailService {
         }
     }
 
+    public void sendLoginAlert(String toEmail, String userAgent) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(
+                    message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name()
+            );
+
+            helper.setFrom("tieuvy5723@gmail.com");
+            helper.setTo(toEmail);
+            helper.setSubject("⚠️ Cảnh Báo Đăng Nhập - OlaChat");
+
+            String html = "<div style='font-family: Arial, sans-serif; max-width: 600px; padding: 20px; " +
+                    "border: 1px solid #ddd; border-radius: 8px; background-color: #fffbe6;'>"
+                    + "<h2 style='color: #e53935;'>Phát hiện đăng nhập từ thiết bị lạ</h2>"
+                    + "<p>Chúng tôi vừa phát hiện một lần đăng nhập từ thiết bị lạ với thông tin sau:</p>"
+                    + "<p><strong>Thông tin thiết bị:</strong> " + userAgent + "</p>"
+                    + "<p>Nếu đây không phải là bạn, vui lòng đổi mật khẩu ngay lập tức.</p>"
+                    + "<hr style='border: none; border-top: 1px solid #ddd;'>"
+                    + "<p style='text-align: center; font-size: 14px; color: #555;'>Trân trọng,<br><strong>Đội ngũ OlaChat</strong></p>"
+                    + "</div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Không thể gửi email cảnh báo đăng nhập: {}", e.getMessage(), e);
+        }
+    }
+
 }
