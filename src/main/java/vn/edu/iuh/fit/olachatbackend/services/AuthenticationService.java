@@ -27,6 +27,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.LogoutRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.AuthenticationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
@@ -35,6 +36,7 @@ import vn.edu.iuh.fit.olachatbackend.enums.Role;
 import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.ConflicException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
+import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 import java.text.ParseException;
@@ -81,6 +83,9 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.valid-duration}")
     protected long VALID_DURATION;
+    @Autowired
+    private UserMapper userMapper;
+
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
@@ -155,6 +160,7 @@ public class AuthenticationService {
                 .builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .user(userMapper.toUserResponse(user))
                 .authenticated(true).build();
     }
 
@@ -375,7 +381,12 @@ public class AuthenticationService {
             String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
             redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
 
-            return new AuthenticationResponse(accessToken, refreshToken,true);
+            return  AuthenticationResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .authenticated(true)
+                    .user(userMapper.toUserResponse(user))
+                    .build();
         } catch (Exception e) {
             throw new BadRequestException("Lỗi xác thực token: " + e.getMessage());
         }
@@ -410,7 +421,13 @@ public class AuthenticationService {
             String jit = SignedJWT.parse(refreshToken).getJWTClaimsSet().getJWTID();
             redisService.saveWhitelistedToken(jit, refreshToken, 7, TimeUnit.DAYS);
 
-            return new AuthenticationResponse(accessTokenServerReturn, refreshToken,true);
+            UserResponse userResponse = userMapper.toUserResponse(user);
+            return  AuthenticationResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .authenticated(true)
+                    .user(userMapper.toUserResponse(user))
+                    .build();
         } catch (Exception e) {
             throw new BadRequestException("Lỗi xác thực Facebook");
         }
