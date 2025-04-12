@@ -1,5 +1,6 @@
 package vn.edu.iuh.fit.olachatbackend.dtos.responses;
 
+import com.google.firebase.remoteconfig.internal.TemplateResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -12,4 +13,5 @@ public class AuthenticationResponse {
     String accessToken;
     String refreshToken;
     boolean authenticated;
+    UserResponse user;
 }
