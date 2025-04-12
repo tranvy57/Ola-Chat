@@ -34,6 +34,7 @@ public class SecurityConfig {
             "/api/groups", "/api/groups/**",
             "/auth/**", "/api/users/me",
             "/twilio/**",
+            "/otp/**",
             "/api/login-history/**", "/files/**",
             "/api/friends/**"
     };

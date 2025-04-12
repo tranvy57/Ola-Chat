@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+@Service("vonage")
 @RequiredArgsConstructor
-public class VonageService {
+public class VonageService implements OtpService {
 
     @Value("${vonage.api-key}")
     private String apiKey;
@@ -38,9 +38,10 @@ public class VonageService {
                 .build();
     }
 
+    @Override
     public void sendOtp(String phoneNumber) {
         String otp = generateOtp();
-        Instant expiresAt = Instant.now().plusSeconds(300); // 5 phút
+        Instant expiresAt = Instant.now().plusSeconds(300);
         otpStorage.put(phoneNumber, new OtpData(otp, expiresAt));
 
         String message = "OlaChat - Mã OTP của bạn: " + otp + " (hết hạn sau 5 phút)";
@@ -60,6 +61,7 @@ public class VonageService {
         }
     }
 
+    @Override
     public boolean verifyOtp(String phoneNumber, String otp) {
         OtpData otpData = otpStorage.get(phoneNumber);
         if (otpData == null || Instant.now().isAfter(otpData.expiresAt())) {
