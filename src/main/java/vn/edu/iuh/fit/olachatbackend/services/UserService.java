@@ -41,7 +41,7 @@ public interface UserService {
 
     UserResponse getMyInfo(String token);
 
-    //Cập nhật thông tin cá nhân (Display_name, Dob)
+    //Cập nhật thông tin cá nhân (Display_name, Dob, Bio, Status)
     UserResponse updateMyInfo(UserUpdateInfoRequest request);
 
     //Change password
