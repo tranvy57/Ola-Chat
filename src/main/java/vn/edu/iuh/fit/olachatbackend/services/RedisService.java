@@ -14,6 +14,7 @@ public class RedisService {
     private RedisTemplate<String, String> redisTemplate;
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
+    private static final String EMAIL_UPDATE_PREFIX = "email:update:";
 
     public void saveWhitelistedToken(String jit, String token, long duration, TimeUnit timeUnit) {
         redisTemplate.opsForValue().set(REFRESH_TOKEN_PREFIX + jit, token, duration, timeUnit);
@@ -66,6 +67,32 @@ public class RedisService {
         String value = redisTemplate.opsForValue().get(key);
         return value != null ? Long.parseLong(value) : null;
     }
+
+
+    //UPDATE EMAIL
+    // Lưu OTP và email mới tương ứng với userId
+    public void saveEmailUpdateOtp(String userId, String otp, String newEmail) {
+        redisTemplate.opsForHash().put(EMAIL_UPDATE_PREFIX + userId, "otp", otp);
+        redisTemplate.opsForHash().put(EMAIL_UPDATE_PREFIX + userId, "newEmail", newEmail);
+        redisTemplate.expire(EMAIL_UPDATE_PREFIX + userId, Duration.ofMinutes(5));
+    }
+
+    // Lấy lại OTP theo userId
+    public String getEmailUpdateOtp(String userId) {
+        return (String) redisTemplate.opsForHash().get(EMAIL_UPDATE_PREFIX + userId, "otp");
+    }
+
+    // Lấy lại email mới theo userId
+    public String getEmailUpdateNewEmail(String userId) {
+        return (String) redisTemplate.opsForHash().get(EMAIL_UPDATE_PREFIX + userId, "newEmail");
+    }
+
+    // Xoá dữ liệu OTP cập nhật email sau khi hoàn tất
+    public void deleteEmailUpdateOtp(String userId) {
+        redisTemplate.delete(EMAIL_UPDATE_PREFIX + userId);
+    }
+
+
 
 }
 

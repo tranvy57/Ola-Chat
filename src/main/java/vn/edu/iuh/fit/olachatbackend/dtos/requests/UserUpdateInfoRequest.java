@@ -42,4 +42,6 @@ public class UserUpdateInfoRequest {
     String bio;
     @Enumerated(EnumType.STRING)
     private UserStatus status;
+
+    private String nickname;
 }
