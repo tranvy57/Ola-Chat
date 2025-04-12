@@ -66,3 +66,8 @@ twilio:
     token: ${AUTH_TOKEN}
   phone:
     number: ${TWILIO_PHONE_NUMBER}
+
+vonage:
+  api-key: ${VONAGE_API_KEY}
+  api-secret: ${VONAGE_API_SECRET}
+  from: ${VONAGE_SENDER}
