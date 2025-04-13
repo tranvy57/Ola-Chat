@@ -43,4 +43,8 @@ public class LoginHistory {
 
     @Column(name = "user_agent")
     private String userAgent;
+
+    @Column(name = "last_ping_time")
+    private LocalDateTime lastPingTime;
+
 }

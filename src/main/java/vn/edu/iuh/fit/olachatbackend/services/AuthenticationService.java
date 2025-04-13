@@ -263,6 +263,7 @@ public class AuthenticationService {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("zycute")
+                .claim("userId", user.getId())
                 .issueTime(Date.from(now))
                 .expirationTime(expiryDate)
                 .jwtID(UUID.randomUUID().toString())
