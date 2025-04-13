@@ -20,4 +20,5 @@ import java.util.List;
 public interface MessageService {
     List<MessageDTO> getMessagesByConversationId(String conversationId);
     MessageDTO save(MessageDTO messageDTO);
+    public MessageDTO recallMessage(String messageId, String senderId);
 }

@@ -36,4 +36,5 @@ public class MessageDTO {
     private List<DeliveryStatus> deliveryStatus;
     private List<ReadStatus> readStatus;
     private LocalDateTime createdAt;
+    private boolean recalled;
 }
