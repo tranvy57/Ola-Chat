@@ -12,7 +12,7 @@ out/
 !**/src/test/**/build/
 
 # Ignore environment files
-.env
+src/main/resources/.env
 
 # Ignore IDE and editor settings
 .idea/
