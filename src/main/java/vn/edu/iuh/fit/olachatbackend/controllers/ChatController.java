@@ -41,8 +41,9 @@ public class ChatController {
     // Private chat
     @MessageMapping("/private-message")
     public MessageDTO receivePrivateMessage(@Payload MessageDTO messageDTO) {
-        messageService.save(messageDTO);
         System.out.println("Message from client: "+ messageDTO);
+        messageService.save(messageDTO);
+
         template.convertAndSend("/user/" + messageDTO.getConversationId() + "/private", messageDTO);
         return messageDTO;
     }
