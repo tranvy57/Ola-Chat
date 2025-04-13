@@ -22,4 +22,8 @@ public interface LoginHistoryService {
     LoginHistoryDTO getRecentLogin(String userId);
     boolean isUserOnline(String userId);
     List<LoginHistoryDTO> getLoginHistory(String userId);
+
+    void pingOnline(String userId);
+    void checkTimeoutUsers();
+
 }

@@ -13,6 +13,7 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  */
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.LoginHistoryDTO;
@@ -96,5 +97,32 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         return historyList.stream()
                 .map(loginHistoryMapper::toDTO)
                 .toList();
+    }
+
+    @Override
+    public void pingOnline(String userId) {
+        Optional<LoginHistory> lastLogin = loginHistoryRepository.findFirstByUserIdOrderByLoginTimeDesc(userId);
+
+        lastLogin.ifPresent(login -> {
+            login.setStatus(LoginHistoryStatus.ONLINE);
+            login.setLastPingTime(LocalDateTime.now());
+            loginHistoryRepository.save(login);
+        });
+    }
+
+//    kiểm tra user đã timeout → set OFFLINE
+    @Override
+    @Scheduled(fixedDelay = 60000) // mỗi phút 1 lần
+    public void checkTimeoutUsers() {
+        LocalDateTime timeoutThreshold = LocalDateTime.now().minusMinutes(10); // THỜI GIAN TỰ ĐỘNG OFFLINE
+
+        List<LoginHistory> onlineUsers = loginHistoryRepository.findByStatus(LoginHistoryStatus.ONLINE);
+        for (LoginHistory login : onlineUsers) {
+            if (login.getLastPingTime() == null || login.getLastPingTime().isBefore(timeoutThreshold)) {
+                login.setStatus(LoginHistoryStatus.OFFLINE);
+                login.setLogoutTime(LocalDateTime.now());
+                loginHistoryRepository.save(login);
+            }
+        }
     }
 }
