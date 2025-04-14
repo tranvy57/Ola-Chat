@@ -36,7 +36,8 @@ public class SecurityConfig {
             "/twilio/**",
             "/otp/**",
             "/api/login-history/**", "/files/**",
-            "/api/friends/**"
+            "/api/friends/**",
+            "/api/notifications/**"
     };
 
     private final String[] ADMIN_ENDPOINTS = { "/api/users"

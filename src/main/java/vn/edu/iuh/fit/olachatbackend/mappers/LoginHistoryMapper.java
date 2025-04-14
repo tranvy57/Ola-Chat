@@ -18,7 +18,7 @@ import org.mapstruct.factory.Mappers;
 import vn.edu.iuh.fit.olachatbackend.dtos.LoginHistoryDTO;
 import vn.edu.iuh.fit.olachatbackend.entities.LoginHistory;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface LoginHistoryMapper {
 
     LoginHistoryMapper INSTANCE = Mappers.getMapper(LoginHistoryMapper.class);
