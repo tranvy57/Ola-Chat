@@ -22,9 +22,9 @@ import vn.edu.iuh.fit.olachatbackend.entities.Notification;
 public interface NotificationMapper {
     NotificationMapper INSTANCE = Mappers.getMapper(NotificationMapper.class);
 
-    NotificationDTO toDTO(Notification loginHistory);
+    NotificationDTO toDTO(Notification notification);
 
-    Notification toEntity(NotificationDTO loginHistoryDTO);
+    Notification toEntity(NotificationDTO notificationDTO);
 }
 
 

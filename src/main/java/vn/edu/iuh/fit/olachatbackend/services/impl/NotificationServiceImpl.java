@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.NotificationPageDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
 import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
 import vn.edu.iuh.fit.olachatbackend.entities.Notification;
@@ -90,16 +91,31 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Page<NotificationDTO> getNotificationsByUser(String userId, Pageable pageable) {
-        return notificationRepository.findByReceiverId(userId, pageable)
+    public NotificationPageDTO getNotificationsByUser(String userId, Pageable pageable) {
+        Page<NotificationDTO> page = notificationRepository.findByReceiverId(userId, pageable)
                 .map(notificationMapper::toDTO);
+
+        // Tạo đối tượng NotificationPageDTO để trả về
+        return NotificationPageDTO.builder()
+                .content(page.getContent())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .build();
     }
 
     @Override
     public void markAsRead(String notificationId) {
-        notificationRepository.findById(notificationId).ifPresent(notification -> {
-            notification.setRead(true);
-            notificationRepository.save(notification);
-        });
+        notificationRepository.findById(notificationId).ifPresentOrElse(
+                notification -> {
+                    // Đánh dấu thông báo là đã đọc
+                    notification.setRead(true);
+                    notificationRepository.save(notification);
+                },
+                () -> {
+                    // Thông báo lỗi nếu không tìm thấy thông báo
+                    throw new NotFoundException("Thông báo không tồn tại với ID: " + notificationId);
+                }
+        );
     }
+
 }

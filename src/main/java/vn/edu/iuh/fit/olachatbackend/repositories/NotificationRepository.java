@@ -17,9 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.edu.iuh.fit.olachatbackend.entities.Notification;
 
-import java.util.List;
-import java.util.UUID;
-
 public interface NotificationRepository extends JpaRepository<Notification, String> {
     Page<Notification> findByReceiverId(String receiverId, Pageable pageable);
 }

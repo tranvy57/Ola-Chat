@@ -20,6 +20,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.NotificationPageDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.services.NotificationService;
 
@@ -32,15 +33,15 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<MessageResponse<Page<NotificationDTO>>> getUserNotifications(
+    public ResponseEntity<MessageResponse<NotificationPageDTO>> getUserNotifications(
             @PathVariable String userId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<NotificationDTO> page = notificationService.getNotificationsByUser(userId, pageable);
+        NotificationPageDTO notificationPageDTO = notificationService.getNotificationsByUser(userId, pageable);
 
-        MessageResponse<Page<NotificationDTO>> response = MessageResponse.<Page<NotificationDTO>>builder()
+        MessageResponse<NotificationPageDTO> response = MessageResponse.<NotificationPageDTO>builder()
                 .message("Lấy danh sách thông báo thành công!")
-                .data(page)
+                .data(notificationPageDTO)
                 .build();
 
         return ResponseEntity.ok(response);
