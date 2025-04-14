@@ -76,7 +76,7 @@ public class NotificationServiceImpl implements NotificationService {
                     .body(request.getBody())
                     .senderId(request.getSenderId())
                     .receiverId(request.getReceiverId())
-                    .isRead(false)
+                    .read(false)
                     .type(request.getType())
                     .createdAt(LocalDateTime.now())
                     .build();

@@ -22,6 +22,7 @@ import vn.edu.iuh.fit.olachatbackend.entities.Notification;
 public interface NotificationMapper {
     NotificationMapper INSTANCE = Mappers.getMapper(NotificationMapper.class);
 
+    @Mapping(source = "read", target = "read")
     NotificationDTO toDTO(Notification notification);
 
     Notification toEntity(NotificationDTO notificationDTO);
