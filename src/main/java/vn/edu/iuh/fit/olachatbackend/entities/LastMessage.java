@@ -30,4 +30,5 @@ public class LastMessage {
     private ObjectId messageId;
     private String content;
     private LocalDateTime createdAt;
+    private String senderId;
 }

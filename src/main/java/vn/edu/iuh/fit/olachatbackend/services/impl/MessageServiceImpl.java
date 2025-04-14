@@ -15,9 +15,17 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
+import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
+import vn.edu.iuh.fit.olachatbackend.entities.LastMessage;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
+
+
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public MessageDTO save(MessageDTO messageDTO) {
@@ -41,8 +50,23 @@ public class MessageServiceImpl implements MessageService {
                 .createdAt(LocalDateTime.now())
                 .recalled(messageDTO.isRecalled())
                 .build();
-        messageRepository.save(message);
+        Message savedMessage = messageRepository.save(message);
+
+        updateLastMessage(savedMessage);
         return messageDTO;
+    }
+
+    private void updateLastMessage(Message message) {
+        LastMessage lastMessage = LastMessage.builder()
+                .messageId(message.getId())
+                .content(message.getContent())
+                .createdAt(message.getCreatedAt())
+                .senderId(message.getSenderId())
+                .build();
+
+        Query query = new Query(Criteria.where("_id").is(message.getConversationId()));
+        Update update = new Update().set("lastMessage", lastMessage);
+        mongoTemplate.updateFirst(query, update, Conversation.class);
     }
 
     public List<MessageDTO> getMessagesByConversationId(String conversationId) {
