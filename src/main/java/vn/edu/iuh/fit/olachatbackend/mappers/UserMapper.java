@@ -8,6 +8,8 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface UserMapper {
     @Mapping(target = "role", source = "role")
@@ -20,4 +22,6 @@ public interface UserMapper {
     User toUser(UserRegisterRequest user);
 
     User toUser(UserUpdateInfoRequest user);
+
+    List<UserResponse> toUserResponseList(List<User> users);
 }
