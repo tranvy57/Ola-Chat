@@ -71,14 +71,6 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/me")
-    public MessageResponse<UserResponse> getMyInfo(@RequestHeader("Authorization") String token) {
-        return MessageResponse.<UserResponse>builder()
-                .message("Lấy thông tin cá nhân thành công")
-                .data(userService.getMyInfo(token))
-                .build();
-    }
-
     @GetMapping("/my-friends")
     public MessageResponse<List<FriendResponse>> getMyFriends() {
         return MessageResponse.<List<FriendResponse>>builder()
