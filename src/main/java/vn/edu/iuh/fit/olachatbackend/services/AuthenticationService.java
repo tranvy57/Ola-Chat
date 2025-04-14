@@ -424,7 +424,7 @@ public class AuthenticationService {
 
             UserResponse userResponse = userMapper.toUserResponse(user);
             return  AuthenticationResponse.builder()
-                    .accessToken(accessToken)
+                    .accessToken(accessTokenServerReturn)
                     .refreshToken(refreshToken)
                     .authenticated(true)
                     .user(userMapper.toUserResponse(user))
