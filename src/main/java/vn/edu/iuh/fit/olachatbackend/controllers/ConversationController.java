@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.ConversationResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
@@ -44,7 +45,7 @@ public class ConversationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ConversationDTO>> getConversationsByUserId(@RequestParam("userId") String userId) {
+    public ResponseEntity<List<ConversationResponse>> getConversationsByUserId(@RequestParam("userId") String userId) {
         return ResponseEntity.ok(conversationService.getAllConversationsByUserId(userId));
     }
 

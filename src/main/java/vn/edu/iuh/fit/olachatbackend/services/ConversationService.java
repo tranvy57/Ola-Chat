@@ -13,11 +13,12 @@ package vn.edu.iuh.fit.olachatbackend.services;
  */
 
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.ConversationResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 
 import java.util.List;
 
 public interface ConversationService {
     ConversationDTO createConversation(ConversationDTO conversationDTO);
-    List<ConversationDTO> getAllConversationsByUserId(String userId);
+    List<ConversationResponse> getAllConversationsByUserId(String userId);
 }
