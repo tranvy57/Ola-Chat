@@ -41,9 +41,18 @@ public class ChatController {
     // Private chat
     @MessageMapping("/private-message")
     public MessageDTO receivePrivateMessage(@Payload MessageDTO messageDTO) {
-        messageService.save(messageDTO);
         System.out.println("Message from client: "+ messageDTO);
+        messageService.save(messageDTO);
+
         template.convertAndSend("/user/" + messageDTO.getConversationId() + "/private", messageDTO);
         return messageDTO;
     }
+
+    @MessageMapping("/recall-message")
+    public void recallMessage(@Payload MessageDTO messageDTO) {
+        System.out.println("Message Recall from client: "+ messageDTO);
+        MessageDTO recalled = messageService.recallMessage(messageDTO.getId(), messageDTO.getSenderId());
+        template.convertAndSend("/user/" + recalled.getConversationId() + "/private", recalled);
+    }
+
 }

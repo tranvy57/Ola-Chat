@@ -11,7 +11,6 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  * @date: 14/02/2025
  * @version:    1.0
  */
-
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -40,6 +39,7 @@ public class MessageServiceImpl implements MessageService {
                 .deliveryStatus(messageDTO.getDeliveryStatus())
                 .readStatus(messageDTO.getReadStatus())
                 .createdAt(LocalDateTime.now())
+                .recalled(messageDTO.isRecalled())
                 .build();
         messageRepository.save(message);
         return messageDTO;
@@ -59,6 +59,53 @@ public class MessageServiceImpl implements MessageService {
                 .deliveryStatus(msg.getDeliveryStatus())
                 .readStatus(msg.getReadStatus())
                 .createdAt(msg.getCreatedAt())
+                .recalled(msg.isRecalled())
                 .build()).toList();
     }
+
+    public MessageDTO recallMessage(String messageId, String senderId) {
+        System.out.println("Mess" + messageId);
+//         Kiểm tra định dạng Message ID
+        if (messageId == null || !messageId.matches("[0-9a-fA-F]{24}")) {
+            throw new IllegalArgumentException("Message ID must be a valid 24-character hex string.");
+        }
+
+        // Chuyển messageId thành ObjectId
+        ObjectId objectId = new ObjectId(messageId);
+
+        // Tìm tin nhắn trong cơ sở dữ liệu
+        Message message = messageRepository.findById(objectId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+
+        // Kiểm tra xem người gửi có quyền thu hồi tin nhắn này
+        if (!message.getSenderId().equals(senderId)) {
+            throw new RuntimeException("Only sender can recall this message");
+        }
+
+        // Nếu tin nhắn chưa được thu hồi thì thực hiện thu hồi
+        if (!message.isRecalled()) {
+            message.setRecalled(true);
+            message.setContent("Tin nhắn đã được thu hồi");
+            message.setMediaUrl(null);  // Nếu là tin nhắn media thì xóa URL
+            messageRepository.save(message);
+        }
+
+//         Trả về MessageDTO với trạng thái tin nhắn đã thu hồi
+        return MessageDTO.builder()
+                .id(message.getId().toHexString())
+                .senderId(message.getSenderId())
+                .conversationId(message.getConversationId().toHexString())
+                .content(message.getContent())
+                .type(message.getType())
+                .mediaUrl(null)
+                .status(message.getStatus())
+                .deliveryStatus(message.getDeliveryStatus())
+                .readStatus(message.getReadStatus())
+                .recalled(true)
+                .createdAt(message.getCreatedAt())
+                .build();
+    }
+
+
+
 }
