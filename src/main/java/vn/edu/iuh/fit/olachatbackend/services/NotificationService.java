@@ -12,6 +12,15 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
+import vn.edu.iuh.fit.olachatbackend.entities.Notification;
+
+import java.util.List;
+
 public interface NotificationService {
-    void sendFriendRequestNotification(String senderId, String receiverId, String receiverToken);
+    void registerDevice(String userId, String token);
+    void sendNotification(NotificationRequest request);
+    List<NotificationDTO> getNotificationsByUser(String userId);
+    void markAsRead(String notificationId);
 }
