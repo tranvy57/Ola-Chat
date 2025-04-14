@@ -12,6 +12,8 @@ package vn.edu.iuh.fit.olachatbackend.repositories;
  * @version:    1.0
  */
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.edu.iuh.fit.olachatbackend.entities.Notification;
 
@@ -19,5 +21,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface NotificationRepository extends JpaRepository<Notification, String> {
-    List<Notification> findByReceiverIdOrderByCreatedAtDesc(String receiverId);
+    Page<Notification> findByReceiverId(String receiverId, Pageable pageable);
 }

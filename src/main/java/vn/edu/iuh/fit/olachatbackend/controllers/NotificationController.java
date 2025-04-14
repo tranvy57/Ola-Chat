@@ -13,6 +13,11 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
  */
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
@@ -27,29 +32,40 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping("/{userId}")
-    public MessageResponse<List<NotificationDTO>> getUserNotifications(@PathVariable String userId) {
-        List<NotificationDTO> data = notificationService.getNotificationsByUser(userId);
-        return MessageResponse.<List<NotificationDTO>>builder()
+    public ResponseEntity<MessageResponse<Page<NotificationDTO>>> getUserNotifications(
+            @PathVariable String userId,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<NotificationDTO> page = notificationService.getNotificationsByUser(userId, pageable);
+
+        MessageResponse<Page<NotificationDTO>> response = MessageResponse.<Page<NotificationDTO>>builder()
                 .message("Lấy danh sách thông báo thành công!")
-                .data(data)
+                .data(page)
                 .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/read")
-    public MessageResponse<String> markAsRead(@PathVariable String id) {
+    public ResponseEntity<MessageResponse<String>> markAsRead(@PathVariable String id) {
         notificationService.markAsRead(id);
-        return MessageResponse.<String>builder()
-                .message("Đã gửi lời mời kết bạn.")
+
+        MessageResponse<String> response = MessageResponse.<String>builder()
+                .message("Đã cập nhật thông báo.")
                 .data(null)
                 .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register-device")
-    public MessageResponse<?> registerDevice(@RequestParam String userId, @RequestParam String token) {
+    public ResponseEntity<MessageResponse<Void>> registerDevice(@RequestParam String userId, @RequestParam String token) {
         notificationService.registerDevice(userId, token);
-        return MessageResponse.<Void>builder()
+
+        MessageResponse<Void> response = MessageResponse.<Void>builder()
                 .message("Đã đăng ký thiết bị thành công.")
                 .build();
 
+        return ResponseEntity.ok(response);
     }
 }

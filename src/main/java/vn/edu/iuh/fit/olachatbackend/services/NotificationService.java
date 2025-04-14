@@ -12,15 +12,14 @@ package vn.edu.iuh.fit.olachatbackend.services;
  * @version:    1.0
  */
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
-import vn.edu.iuh.fit.olachatbackend.entities.Notification;
-
-import java.util.List;
 
 public interface NotificationService {
     void registerDevice(String userId, String token);
     void sendNotification(NotificationRequest request);
-    List<NotificationDTO> getNotificationsByUser(String userId);
+    Page<NotificationDTO> getNotificationsByUser(String userId, Pageable pageable);
     void markAsRead(String notificationId);
 }

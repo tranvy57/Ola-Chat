@@ -16,6 +16,8 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
@@ -28,6 +30,7 @@ import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.NotificationRepository;
 import vn.edu.iuh.fit.olachatbackend.services.NotificationService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,6 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
                     .receiverId(request.getReceiverId())
                     .isRead(false)
                     .type(request.getType())
+                    .createdAt(LocalDateTime.now())
                     .build();
             notificationRepository.save(notification);
         } catch (NotFoundException e) {
@@ -86,10 +90,9 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public List<NotificationDTO> getNotificationsByUser(String userId) {
-        return notificationRepository.findByReceiverIdOrderByCreatedAtDesc(userId)
-                .stream().map(notificationMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<NotificationDTO> getNotificationsByUser(String userId, Pageable pageable) {
+        return notificationRepository.findByReceiverId(userId, pageable)
+                .map(notificationMapper::toDTO);
     }
 
     @Override
