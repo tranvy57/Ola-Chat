@@ -49,6 +49,9 @@ public class VonageService implements OtpService {
 
         try {
             SmsSubmissionResponse response = vonageClient.getSmsClient().submitMessage(sms);
+            System.out.println("Vonage status: " + response.getMessages().get(0).getStatus());
+            System.out.println("Vonage error text: " + response.getMessages().get(0).getErrorText());
+
             var result = response.getMessages().get(0);
 
             if (result.getStatus() != MessageStatus.OK) {

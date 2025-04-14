@@ -1,12 +1,9 @@
+
 package vn.edu.iuh.fit.olachatbackend.entities;
 
 import jakarta.persistence.*;
+import lombok.*;
 import org.bson.types.ObjectId;
-
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageStatus;
@@ -38,6 +35,7 @@ public class Message {
 
     private List<ReplyStatus> replyStatus;
     private List<DeletedStatus> deletedStatus;
+    private boolean recalled = false;
 
 }
 
