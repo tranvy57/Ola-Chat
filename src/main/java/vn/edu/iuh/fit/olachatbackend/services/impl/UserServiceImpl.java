@@ -255,12 +255,17 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
 
+        if (newEmail.equalsIgnoreCase(user.getEmail())) {
+            throw new BadRequestException("Email mới không được trùng với email hiện tại");
+        }
+
         String userId = user.getId();
         String otpCode = OtpUtils.generateOtp();
 
         redisService.saveEmailUpdateOtp(userId, otpCode, newEmail);
         emailService.sendVerifyNewEmail(newEmail, otpCode);
     }
+
 
     @Override
     public UserResponse verifyAndUpdateEmail(String otpInput) {

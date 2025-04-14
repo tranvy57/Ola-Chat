@@ -28,16 +28,21 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {"/auth/login", "/auth/introspect", "/auth/logout", "/auth/forgot-password", "/auth/reset-password",
-            "/auth/refresh", "/users/**", "/v3/api-docs/**", "/swagger-ui/**",
-            "/api/conversations", "/api/conversations/**", "/api/users/**", "/api/messages", "/ws", "/ws/**", "/user/**", "/app/**",
+    private final String[] PUBLIC_ENDPOINTS = {
+            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/forgot-password", "/auth/reset-password","/app/**",
+            "/auth/refresh",
+            "/v3/api-docs/**", "/swagger-ui/**",
+            "/api/conversations", "/api/conversations/**",
+            "/api/messages",
+            "/ws", "/ws/**",
             "/api/groups", "/api/groups/**",
-            "/auth/**", "/api/users/me",
             "/twilio/**",
             "/otp/**",
-            "/api/login-history/**", "/files/**",
+            "/api/login-history/**",
+            "/files/**",
             "/api/friends/**",
-            "/api/notifications/**"
+            "/api/notifications/**",
+            "/users"
     };
 
     private final String[] ADMIN_ENDPOINTS = { "/api/users"
