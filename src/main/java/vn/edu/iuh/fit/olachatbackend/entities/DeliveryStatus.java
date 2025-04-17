@@ -18,6 +18,6 @@ import java.time.LocalDateTime;
 
 @Document
 public class DeliveryStatus {
-    private Long userId;
+    private String userId;
     private LocalDateTime deliveredAt;
 }

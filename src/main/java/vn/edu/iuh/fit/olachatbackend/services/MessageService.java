@@ -23,4 +23,6 @@ public interface MessageService {
     MessageDTO recallMessage(String messageId, String senderId);
     List<MediaMessageResponse> getMediaMessages(String conversationId, String senderId);
     List<MediaMessageResponse> getFileMessages(String conversationId, String senderId);
+
+    void markMessageAsRead(String messageId, String userId);
 }

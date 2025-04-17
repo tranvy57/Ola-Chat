@@ -19,9 +19,12 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.MediaMessageResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.LastMessage;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
+import vn.edu.iuh.fit.olachatbackend.entities.ReadStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageType;
+import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
+import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
 
@@ -31,14 +34,18 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
     private final MongoTemplate mongoTemplate;
+    private final ParticipantRepository participantRepository;
 
     @Override
     public MessageDTO save(MessageDTO messageDTO) {
@@ -143,6 +150,46 @@ public class MessageServiceImpl implements MessageService {
     public List<MediaMessageResponse> getFileMessages(String conversationId, String senderId) {
         return getMessagesByTypes(conversationId, senderId, List.of(MessageType.FILE));
     }
+
+    @Override
+    public void markMessageAsRead(String messageId, String userId) {
+        Message message = messageRepository.findById(new ObjectId(messageId))
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy message"));
+
+        List<ReadStatus> readStatusList = message.getReadStatus();
+        if (readStatusList == null) {
+            readStatusList = new ArrayList<>();
+            message.setReadStatus(readStatusList);
+        }
+
+        boolean alreadyRead = readStatusList.stream()
+                .anyMatch(rs -> rs.getUserId().equals(userId));
+
+        if (alreadyRead) return;
+
+        // Thêm trạng thái đã đọc
+        readStatusList.add(new ReadStatus(userId, LocalDateTime.now()));
+
+        // Lấy tổng số người trong cuộc trò chuyện
+        long participantCount = participantRepository.countByConversationId(message.getConversationId());
+
+        // Nếu là chat đơn → set READ ngay khi có 1 người đọc
+        if (participantCount == 2) {
+            message.setStatus(MessageStatus.READ);
+        } else {
+            // Chat nhóm → kiểm tra nếu tất cả đã đọc
+            Set<String> readUserIds = message.getReadStatus().stream()
+                    .map(ReadStatus::getUserId)
+                    .collect(Collectors.toSet());
+
+            if (readUserIds.size() == participantCount) {
+                message.setStatus(MessageStatus.READ);
+            }
+        }
+
+        messageRepository.save(message);
+    }
+
 
     // Common method
     private List<MediaMessageResponse> getMessagesByTypes(String conversationId, String senderId, List<MessageType> types) {

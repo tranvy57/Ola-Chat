@@ -12,12 +12,18 @@ package vn.edu.iuh.fit.olachatbackend.entities;
  * @version:    1.0
  */
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Document
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReadStatus {
-    private Long userId;
+    private String userId;
     private LocalDateTime readAt;
 }
