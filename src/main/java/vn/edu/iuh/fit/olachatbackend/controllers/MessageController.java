@@ -36,6 +36,19 @@ public class MessageController {
         return messageService.save(messageDTO);
     }
 
+    @PutMapping("/{messageId}/received")
+    public MessageResponse<String> markAsReceived(
+            @PathVariable String messageId,
+            @RequestParam String userId
+    ) {
+        messageService.markMessageAsReceived(messageId, userId);
+        return MessageResponse.<String>builder()
+                .message("Đã đánh dấu tin nhắn là đã nhận.")
+                .data(messageId)
+                .build();
+    }
+
+
     @PutMapping("/{messageId}/read")
     public MessageResponse<String> markAsRead(
             @PathVariable String messageId,

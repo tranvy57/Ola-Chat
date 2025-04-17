@@ -12,11 +12,15 @@ package vn.edu.iuh.fit.olachatbackend.entities;
  * @version:    1.0
  */
 
+import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Document
+@Getter
+@Setter
+@Builder
 public class DeliveryStatus {
     private String userId;
     private LocalDateTime deliveredAt;
