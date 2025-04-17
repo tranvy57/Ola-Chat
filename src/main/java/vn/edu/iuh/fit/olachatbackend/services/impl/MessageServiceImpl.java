@@ -43,7 +43,7 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(new ObjectId(messageDTO.getConversationId()))
                 .content(messageDTO.getContent())
                 .type(messageDTO.getType())
-                .mediaUrl(messageDTO.getMediaUrl())
+                .mediaUrls(messageDTO.getMediaUrls())
                 .status(messageDTO.getStatus())
                 .deliveryStatus(messageDTO.getDeliveryStatus())
                 .readStatus(messageDTO.getReadStatus())
@@ -78,7 +78,7 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(msg.getConversationId().toHexString())
                 .content(msg.getContent())
                 .type(msg.getType())
-                .mediaUrl(msg.getMediaUrl())
+                .mediaUrls(msg.getMediaUrls())
                 .status(msg.getStatus())
                 .deliveryStatus(msg.getDeliveryStatus())
                 .readStatus(msg.getReadStatus())
@@ -109,8 +109,8 @@ public class MessageServiceImpl implements MessageService {
         // Nếu tin nhắn chưa được thu hồi thì thực hiện thu hồi
         if (!message.isRecalled()) {
             message.setRecalled(true);
-            message.setContent("Tin nhắn đã được thu hồi");
-            message.setMediaUrl(null);  // Nếu là tin nhắn media thì xóa URL
+//            message.setContent("Tin nhắn đã được thu hồi");
+//            message.setMediaUrl(null);  // Nếu là tin nhắn media thì xóa URL
             messageRepository.save(message);
         }
 
@@ -121,7 +121,7 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(message.getConversationId().toHexString())
                 .content(message.getContent())
                 .type(message.getType())
-                .mediaUrl(null)
+//                .mediaUrl(null)
                 .status(message.getStatus())
                 .deliveryStatus(message.getDeliveryStatus())
                 .readStatus(message.getReadStatus())
