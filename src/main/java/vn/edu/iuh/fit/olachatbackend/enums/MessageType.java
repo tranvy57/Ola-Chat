@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum MessageType {
-    TEXT("TEXT"), IMAGE("IMAGE"), VIDEO("VIDEO"),
-    DOCUMENT("DOCUMENT"), EMOTION("EMOTION"),  VOICE("VOICE");
+    TEXT("TEXT"), MEDIA("MEDIA"), EMOJI("EMOJI"),
+    STICKER("STICKER"), VOICE("VOICE"), FILE("FILE");
 
     private final String value;
 
-    private MessageType(String value) {
+    MessageType(String value) {
         this.value = value;
     }
 

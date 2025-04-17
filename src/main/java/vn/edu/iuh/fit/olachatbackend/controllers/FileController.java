@@ -21,6 +21,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.repositories.FileRepository;
 import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
 
+import java.io.IOException;
 import java.util.Map;
 
 @RestController
@@ -84,4 +85,15 @@ public class FileController {
                     .body("Download failed: " + e.getMessage());
         }
     }
+
+    @PostMapping("/upload/image")
+    public ResponseEntity<String> uploadImage(
+            @RequestParam("file") MultipartFile file)
+            throws IOException, IOException {
+        return ResponseEntity.ok(cloudinaryService.uploadImage(file));
+    }
+
+
+
+
 }

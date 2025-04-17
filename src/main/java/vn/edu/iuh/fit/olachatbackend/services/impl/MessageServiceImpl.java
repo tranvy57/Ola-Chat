@@ -135,8 +135,18 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<MediaMessageResponse> getMediaMessages(String conversationId, String senderId) {
+        return getMessagesByTypes(conversationId, senderId, List.of(MessageType.MEDIA));
+    }
+
+    @Override
+    public List<MediaMessageResponse> getFileMessages(String conversationId, String senderId) {
+        return getMessagesByTypes(conversationId, senderId, List.of(MessageType.FILE));
+    }
+
+    // Common method
+    private List<MediaMessageResponse> getMessagesByTypes(String conversationId, String senderId, List<MessageType> types) {
         Criteria criteria = Criteria.where("conversationId").is(new ObjectId(conversationId))
-                .and("type").in(List.of(MessageType.IMAGE, MessageType.VIDEO));
+                .and("type").in(types);
 
         if (senderId != null && !senderId.isEmpty()) {
             criteria.and("senderId").is(senderId);
@@ -145,14 +155,22 @@ public class MessageServiceImpl implements MessageService {
         Query query = new Query(criteria);
         List<Message> messages = mongoTemplate.find(query, Message.class);
 
-        return messages.stream().map(msg -> MediaMessageResponse.builder()
-                .id(msg.getId().toString())
-                .mediaUrls(msg.getMediaUrls())
-                .type(msg.getType().getValue())
-                .senderId(msg.getSenderId())
-                .createdAt(msg.getCreatedAt())
-                .build()).toList();
+        return convertToResponse(messages);
     }
+
+    // Convert method
+    private List<MediaMessageResponse> convertToResponse(List<Message> messages) {
+        return messages.stream()
+                .map(msg -> MediaMessageResponse.builder()
+                        .id(msg.getId().toString())
+                        .mediaUrls(msg.getMediaUrls())
+                        .type(msg.getType().getValue())
+                        .senderId(msg.getSenderId())
+                        .createdAt(msg.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
 
 
 }
