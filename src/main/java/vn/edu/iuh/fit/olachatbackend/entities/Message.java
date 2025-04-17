@@ -26,7 +26,7 @@ public class Message {
     private String content;
     @Enumerated(EnumType.STRING)
     private MessageType type;
-    private String mediaUrl;
+    private List<String> mediaUrls;
 
     private MessageStatus status;
     private List<DeliveryStatus> deliveryStatus;

@@ -15,9 +15,11 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MediaMessageResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.LastMessage;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
+import vn.edu.iuh.fit.olachatbackend.enums.MessageType;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
 
@@ -29,6 +31,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +46,7 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(new ObjectId(messageDTO.getConversationId()))
                 .content(messageDTO.getContent())
                 .type(messageDTO.getType())
-                .mediaUrl(messageDTO.getMediaUrl())
+                .mediaUrls(messageDTO.getMediaUrls())
                 .status(messageDTO.getStatus())
                 .deliveryStatus(messageDTO.getDeliveryStatus())
                 .readStatus(messageDTO.getReadStatus())
@@ -78,7 +81,7 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(msg.getConversationId().toHexString())
                 .content(msg.getContent())
                 .type(msg.getType())
-                .mediaUrl(msg.getMediaUrl())
+                .mediaUrls(msg.getMediaUrls())
                 .status(msg.getStatus())
                 .deliveryStatus(msg.getDeliveryStatus())
                 .readStatus(msg.getReadStatus())
@@ -110,7 +113,7 @@ public class MessageServiceImpl implements MessageService {
         if (!message.isRecalled()) {
             message.setRecalled(true);
             message.setContent("Tin nhắn đã được thu hồi");
-            message.setMediaUrl(null);  // Nếu là tin nhắn media thì xóa URL
+            message.setMediaUrls(null);  // Nếu là tin nhắn media thì xóa URL
             messageRepository.save(message);
         }
 
@@ -121,7 +124,7 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(message.getConversationId().toHexString())
                 .content(message.getContent())
                 .type(message.getType())
-                .mediaUrl(null)
+                .mediaUrls(null)
                 .status(message.getStatus())
                 .deliveryStatus(message.getDeliveryStatus())
                 .readStatus(message.getReadStatus())
@@ -130,6 +133,26 @@ public class MessageServiceImpl implements MessageService {
                 .build();
     }
 
+    @Override
+    public List<MediaMessageResponse> getMediaMessages(String conversationId, String senderId) {
+        Criteria criteria = Criteria.where("conversationId").is(new ObjectId(conversationId))
+                .and("type").in(List.of(MessageType.IMAGE, MessageType.VIDEO));
+
+        if (senderId != null && !senderId.isEmpty()) {
+            criteria.and("senderId").is(senderId);
+        }
+
+        Query query = new Query(criteria);
+        List<Message> messages = mongoTemplate.find(query, Message.class);
+
+        return messages.stream().map(msg -> MediaMessageResponse.builder()
+                .id(msg.getId().toString())
+                .mediaUrls(msg.getMediaUrls())
+                .type(msg.getType().getValue())
+                .senderId(msg.getSenderId())
+                .createdAt(msg.getCreatedAt())
+                .build()).toList();
+    }
 
 
 }

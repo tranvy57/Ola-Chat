@@ -33,7 +33,7 @@ public class SecurityConfig {
             "/auth/refresh",
             "/v3/api-docs/**", "/swagger-ui/**",
             "/api/conversations", "/api/conversations/**",
-            "/api/messages",
+            "/api/messages/**",
             "/ws", "/ws/**",
             "/api/groups", "/api/groups/**",
             "/twilio/**",

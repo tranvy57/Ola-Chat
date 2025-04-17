@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.ConversationResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MediaMessageResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
@@ -59,5 +61,17 @@ public class ConversationController {
     public ResponseEntity<List<UserResponse>> getUsersByConversation(@PathVariable String conversationId) {
         List<UserResponse> users = userService.getUsersByConversationId(conversationId);
         return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/{conversationId}/media")
+    public MessageResponse<List<MediaMessageResponse>> getConversationMedia(
+            @PathVariable String conversationId,
+            @RequestParam(required = false) String senderId
+    ) {
+        List<MediaMessageResponse> data = messageService.getMediaMessages(conversationId, senderId);
+        return MessageResponse.<List<MediaMessageResponse>>builder()
+                .message("Lấy media thành công.")
+                .data(data)
+                .build();
     }
 }
