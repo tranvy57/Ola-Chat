@@ -19,6 +19,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.MediaMessageResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.LastMessage;
 import vn.edu.iuh.fit.olachatbackend.entities.Message;
+import vn.edu.iuh.fit.olachatbackend.enums.MessageStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageType;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
@@ -47,7 +48,7 @@ public class MessageServiceImpl implements MessageService {
                 .content(messageDTO.getContent())
                 .type(messageDTO.getType())
                 .mediaUrls(messageDTO.getMediaUrls())
-                .status(messageDTO.getStatus())
+                .status(MessageStatus.SENT)
                 .deliveryStatus(messageDTO.getDeliveryStatus())
                 .readStatus(messageDTO.getReadStatus())
                 .createdAt(LocalDateTime.now())

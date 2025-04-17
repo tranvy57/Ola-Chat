@@ -64,7 +64,6 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             throw new ConflicException("Hai người đã là bạn bè.");
         }
 
-
         // Find the device token associated with the receiver
         DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
 
