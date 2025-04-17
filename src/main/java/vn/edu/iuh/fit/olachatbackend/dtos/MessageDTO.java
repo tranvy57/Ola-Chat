@@ -31,7 +31,7 @@ public class MessageDTO {
     private String conversationId;
     private String content;
     private MessageType type;
-    private String mediaUrl;
+    private List<String> mediaUrls;
     private MessageStatus status;
     private List<DeliveryStatus> deliveryStatus;
     private List<ReadStatus> readStatus;
