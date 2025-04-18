@@ -16,11 +16,11 @@ import lombok.Getter;
 
 @Getter
 public enum MessageStatus {
-    SENT("SENT") ,RECEIVED("RECEIVED"), DELIVERED("DELIVERED");
+    SENT("SENT"), RECEIVED("RECEIVED"), READ("READ");
 
     private final String value;
 
-    private MessageStatus(String value) {
+    MessageStatus(String value) {
         this.value = value;
     }
 }
