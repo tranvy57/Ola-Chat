@@ -19,15 +19,16 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.MessageResponseDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.MessageRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
 import vn.edu.iuh.fit.olachatbackend.entities.Participant;
-import vn.edu.iuh.fit.olachatbackend.entities.User;
 import vn.edu.iuh.fit.olachatbackend.enums.NotificationType;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
+import vn.edu.iuh.fit.olachatbackend.mappers.MessageMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.ConversationRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
@@ -48,33 +49,34 @@ public class ChatController {
     private final UserServiceImpl userServiceImpl;
     private final ParticipantRepository participantRepository;
     private final DeviceTokenRepository deviceTokenRepository;
+    private final MessageMapper messageMapper;
 
     // Public chat
     @MessageMapping("/message")
     @SendTo("/chatroom/public")
-    public MessageDTO receivePublicMessage(@Payload MessageDTO messageDTO) {
+    public MessageRequest receivePublicMessage(@Payload MessageRequest messageDTO) {
         return messageDTO;
     }
 
     // Private chat
     @MessageMapping("/private-message")
-    public MessageDTO receivePrivateMessage(@Payload MessageDTO messageDTO) {
+    public MessageResponseDTO receivePrivateMessage(@Payload MessageRequest messageDTO) {
         System.out.println("Message from client: "+ messageDTO);
         messageService.save(messageDTO);
 
         template.convertAndSend("/user/" + messageDTO.getConversationId() + "/private", messageDTO);
         notifyRecipients(messageDTO);
-        return messageDTO;
+        return messageMapper.toResponseDTO(messageDTO);
     }
 
     @MessageMapping("/recall-message")
-    public void recallMessage(@Payload MessageDTO messageDTO) {
+    public void recallMessage(@Payload MessageRequest messageDTO) {
         System.out.println("Message Recall from client: "+ messageDTO);
-        MessageDTO recalled = messageService.recallMessage(messageDTO.getId(), messageDTO.getSenderId());
+        MessageRequest recalled = messageService.recallMessage(messageDTO.getId(), messageDTO.getSenderId());
         template.convertAndSend("/user/" + recalled.getConversationId() + "/private", recalled);
     }
 
-    private void notifyRecipients(MessageDTO messageDTO) {
+    private void notifyRecipients(MessageRequest messageDTO) {
         // Tìm conversation
         Conversation conversation = conversationRepository.findById(new ObjectId(messageDTO.getConversationId()))
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy cuộc trò chuyện"));

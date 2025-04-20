@@ -4,7 +4,7 @@
  * Copyright (c) 2025 IUH. All rights reserved.
  */
 
-package vn.edu.iuh.fit.olachatbackend.dtos;
+package vn.edu.iuh.fit.olachatbackend.dtos.requests;
 /*
  * @description:
  * @author: Nguyen Thanh Nhut
@@ -25,7 +25,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class MessageDTO {
+public class MessageRequest {
     private String id;
     private String senderId;
     private String conversationId;
