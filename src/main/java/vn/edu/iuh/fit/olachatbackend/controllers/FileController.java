@@ -20,6 +20,7 @@ import vn.edu.iuh.fit.olachatbackend.entities.File;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.repositories.FileRepository;
 import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
+import vn.edu.iuh.fit.olachatbackend.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -66,23 +67,44 @@ public class FileController {
     @PostMapping("/download")
     public ResponseEntity<?> downloadFile(@RequestParam("publicId") String publicId) {
         try {
-            byte[] fileData = cloudinaryService.downloadFile(publicId);
+            // Get the file entity first to check its type
             File fileEntity = fileRepository.findByPublicId(publicId)
-                    .orElseThrow(() -> new NotFoundException("File not found"));
-            String fileType = fileEntity.getFileType();
-            String fileExtension = fileType.substring(fileType.lastIndexOf('/') + 1);
-            String fileName = publicId + "." + fileExtension;
+                    .orElseThrow(() -> new NotFoundException("File not found with public ID: " + publicId));
+            
+            try {
+                byte[] fileData = cloudinaryService.downloadFile(publicId);
+                String fileType = fileEntity.getFileType();
+                String fileExtension = FileUtils.getExtensionFromMimeType(fileType);
+                String fileName = publicId + "." + fileExtension;
 
-            return ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                return ResponseEntity.ok()
+                        .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                        .body(Map.of(
+                                "fileName", fileName,
+                                "location", downloadDir + fileName,
+                                "message", "Tải xuống thành công"
+                        ));
+            } catch (IOException e) {
+                // Handle specific IO exceptions that might occur during download
+                return ResponseEntity.status(404)
+                        .body(Map.of(
+                                "error", "File download failed",
+                                "message", "File could not be downloaded from cloud storage: " + e.getMessage()
+                        ));
+            }
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(404)
                     .body(Map.of(
-                            "fileName", fileName,
-                            "location", downloadDir + fileName,
-                            "message", "Tải xuống thành công"
+                            "error", "Not Found",
+                            "message", e.getMessage()
                     ));
         } catch (Exception e) {
+            e.printStackTrace(); // Log the stack trace for debugging
             return ResponseEntity.status(500)
-                    .body("Download failed: " + e.getMessage());
+                    .body(Map.of(
+                            "error", "Internal Server Error",
+                            "message", "Download failed: " + e.getMessage()
+                    ));
         }
     }
 
@@ -97,3 +119,4 @@ public class FileController {
 
 
 }
+

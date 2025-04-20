@@ -44,5 +44,8 @@ public class File {
 
     private String publicId;
 
+    @Column(name = "resource_type")
+    private String resourceType;
+
     private Long associatedIDMessageId;
 }
