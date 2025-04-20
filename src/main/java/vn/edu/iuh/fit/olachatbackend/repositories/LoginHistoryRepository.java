@@ -17,6 +17,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.olachatbackend.entities.LoginHistory;
+import vn.edu.iuh.fit.olachatbackend.enums.LoginHistoryStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,4 +30,5 @@ public interface LoginHistoryRepository extends JpaRepository<LoginHistory, Stri
     @Query("SELECT DISTINCT lh.userAgent FROM LoginHistory lh WHERE lh.user.id = :userId")
     List<String> findDistinctUserAgentsByUserId(@Param("userId") String userId);
 
+    List<LoginHistory> findByStatus(LoginHistoryStatus status);
 }

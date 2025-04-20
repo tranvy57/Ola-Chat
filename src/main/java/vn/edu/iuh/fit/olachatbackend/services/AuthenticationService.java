@@ -263,6 +263,7 @@ public class AuthenticationService {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("zycute")
+                .claim("userId", user.getId())
                 .issueTime(Date.from(now))
                 .expirationTime(expiryDate)
                 .jwtID(UUID.randomUUID().toString())
@@ -423,7 +424,7 @@ public class AuthenticationService {
 
             UserResponse userResponse = userMapper.toUserResponse(user);
             return  AuthenticationResponse.builder()
-                    .accessToken(accessToken)
+                    .accessToken(accessTokenServerReturn)
                     .refreshToken(refreshToken)
                     .authenticated(true)
                     .user(userMapper.toUserResponse(user))

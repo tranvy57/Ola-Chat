@@ -13,11 +13,17 @@ package vn.edu.iuh.fit.olachatbackend.services;
  */
 
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
-import vn.edu.iuh.fit.olachatbackend.entities.Message;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MediaMessageResponse;
 
 import java.util.List;
 
 public interface MessageService {
     List<MessageDTO> getMessagesByConversationId(String conversationId);
     MessageDTO save(MessageDTO messageDTO);
+    MessageDTO recallMessage(String messageId, String senderId);
+    List<MediaMessageResponse> getMediaMessages(String conversationId, String senderId);
+    List<MediaMessageResponse> getFileMessages(String conversationId, String senderId);
+
+    void markMessageAsRead(String messageId, String userId);
+    void markMessageAsReceived(String messageId, String userId);
 }

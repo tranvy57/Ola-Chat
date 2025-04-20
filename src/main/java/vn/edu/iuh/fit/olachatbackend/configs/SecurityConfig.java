@@ -28,14 +28,21 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {"/auth/login", "/auth/introspect", "/auth/logout", "/auth/forgot-password", "/auth/reset-password",
-            "/auth/refresh", "/users/**", "/v3/api-docs/**", "/swagger-ui/**",
-            "/api/conversations", "/api/conversations/**", "/api/users/**", "/api/messages", "/ws", "/ws/**", "/user/**", "/app/**",
+    private final String[] PUBLIC_ENDPOINTS = {
+            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/forgot-password", "/auth/reset-password","/app/**",
+            "/auth/refresh",
+            "/v3/api-docs/**", "/swagger-ui/**",
+            "/api/conversations", "/api/conversations/**",
+            "/api/messages/**",
+            "/ws", "/ws/**",
             "/api/groups", "/api/groups/**",
-            "/auth/**", "/api/users/me",
             "/twilio/**",
-            "/api/login-history/**", "/files/**",
-            "/api/friends/**"
+            "/otp/**",
+            "/api/login-history/**",
+            "/files/**",
+            "/api/friends/**",
+            "/api/notifications/**",
+            "/users"
     };
 
     private final String[] ADMIN_ENDPOINTS = { "/api/users"
@@ -64,7 +71,8 @@ public class SecurityConfig {
 
         httpSecurity.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOrigins(List.of("http://localhost:3000")); // Cho phép React truy cập
+//            config.setAllowedOrigins(List.of("http://localhost:3000")); // Cho phép React truy cập
+            config.setAllowedOriginPatterns(List.of("*"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setAllowCredentials(true);

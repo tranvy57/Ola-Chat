@@ -2,20 +2,19 @@ package vn.edu.iuh.fit.olachatbackend.services;
 
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+@Service("twilio")
 @RequiredArgsConstructor
-public class TwilioService {
+public class TwilioService implements OtpService {
 
     @Value("${twilio.account.sid}")
     private String accountSid;
@@ -26,7 +25,6 @@ public class TwilioService {
     @Value("${twilio.phone.number}")
     private String twilioPhoneNumber;
 
-    // Lưu OTP theo số điện thoại: <phoneNumber, OtpData>
     private final Map<String, OtpData> otpStorage = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -34,9 +32,10 @@ public class TwilioService {
         Twilio.init(accountSid, authToken);
     }
 
+    @Override
     public void sendOtp(String phoneNumber) {
         String otp = generateOtp();
-        Instant expiresAt = Instant.now().plusSeconds(300); // 5 phút
+        Instant expiresAt = Instant.now().plusSeconds(300);
         otpStorage.put(phoneNumber, new OtpData(otp, expiresAt));
 
         Message.creator(
@@ -46,29 +45,22 @@ public class TwilioService {
         ).create();
     }
 
+    @Override
     public boolean verifyOtp(String phoneNumber, String otp) {
         OtpData otpData = otpStorage.get(phoneNumber);
-        if (otpData == null) return false;
-
-        if (Instant.now().isAfter(otpData.expiresAt())) {
-            otpStorage.remove(phoneNumber); // OTP hết hạn thì xoá
+        if (otpData == null || Instant.now().isAfter(otpData.expiresAt())) {
+            otpStorage.remove(phoneNumber);
             return false;
         }
 
         boolean isValid = otpData.otp().equals(otp);
-        if (isValid) {
-            otpStorage.remove(phoneNumber); // OTP đúng thì xoá sau khi xác minh
-        }
+        if (isValid) otpStorage.remove(phoneNumber);
         return isValid;
     }
 
     private String generateOtp() {
-        Random random = new Random();
-        int otp = 100000 + random.nextInt(900000);
-        return String.valueOf(otp);
+        return String.valueOf(100000 + new Random().nextInt(900000));
     }
 
-    // Inner class lưu thông tin OTP
-    private record OtpData(String otp, Instant expiresAt) {
-    }
+    private record OtpData(String otp, Instant expiresAt) {}
 }

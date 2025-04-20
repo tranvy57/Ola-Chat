@@ -29,4 +29,6 @@ public interface ParticipantRepository extends MongoRepository<Participant, Obje
     boolean existsByConversationIdAndUserId(ObjectId groupId, String userId);
 
     List<Participant> findByConversationId(ObjectId groupId);
+
+    long countByConversationId(ObjectId conversationId);
 }

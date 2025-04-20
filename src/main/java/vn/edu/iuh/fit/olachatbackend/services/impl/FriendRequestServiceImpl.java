@@ -13,15 +13,15 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  */
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.FriendRequestDTO;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.FriendRequestResponse;
-import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
-import vn.edu.iuh.fit.olachatbackend.entities.Friend;
-import vn.edu.iuh.fit.olachatbackend.entities.FriendRequest;
-import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.entities.*;
 import vn.edu.iuh.fit.olachatbackend.enums.FriendStatus;
+import vn.edu.iuh.fit.olachatbackend.enums.NotificationType;
 import vn.edu.iuh.fit.olachatbackend.enums.RequestStatus;
 import vn.edu.iuh.fit.olachatbackend.exceptions.*;
 import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
@@ -64,15 +64,23 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             throw new ConflicException("Hai người đã là bạn bè.");
         }
 
-        try {
-            DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
-            if (deviceToken != null) {
-                notificationService.sendFriendRequestNotification(senderId, receiverId, deviceToken.getToken());
-            } else {
-                throw new NotFoundException("Không tìm thấy token cho user: " + receiverId);
-            }
-        } catch (Exception e) {
-            throw new InternalServerErrorException("Lỗi khi gửi thông báo");
+        // Find the device token associated with the receiver
+        DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
+
+        // If a device token is found, send the notification
+        if (deviceToken != null) {
+            NotificationRequest notificationRequest = NotificationRequest.builder()
+                    .title("Lời mời kết bạn")
+                    .body("Bạn có lời mời kết bạn từ " + sender.getDisplayName())
+                    .token(deviceToken.getToken())
+                    .type(NotificationType.FRIEND_REQUEST)
+                    .senderId(sender.getId())
+                    .receiverId(receiverId)
+                    .build();
+            notificationService.sendNotification(notificationRequest);
+        } else {
+            // Throw a custom exception if no token is found
+            throw new NotFoundException("Không tìm thấy token cho user: " + receiverId);
         }
 
         FriendRequest friendRequest = new FriendRequest();
@@ -182,18 +190,6 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         friendRequest.setResponseAt(LocalDateTime.now());
 
         friendRequestRepository.save(friendRequest);
-    }
-
-    @Override
-    public void registerDevice(String userId, String token) {
-        DeviceToken deviceToken = deviceTokenRepository.findByUserId(userId);
-        if (deviceToken == null) {
-            deviceToken = new DeviceToken();
-            deviceToken.setUserId(userId);
-        }
-        deviceToken.setToken(token);
-        deviceTokenRepository.save(deviceToken);
-
     }
 
     @Override

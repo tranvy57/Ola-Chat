@@ -12,18 +12,19 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
  * @version:    1.0
  */
 
-import lombok.RequiredArgsConstructor;
+import io.jsonwebtoken.Jwt;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.LoginHistoryDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserStatusResponse;
 import vn.edu.iuh.fit.olachatbackend.services.LoginHistoryService;
+import vn.edu.iuh.fit.olachatbackend.utils.extractUserIdFromJwt;
 
 import java.util.List;
+
+import static vn.edu.iuh.fit.olachatbackend.utils.extractUserIdFromJwt.extractUserIdFromJwt;
 
 @RestController
 @RequestMapping("/api/login-history")
@@ -56,5 +57,21 @@ public class LoginHistoryController {
     public ResponseEntity<UserStatusResponse> isUserOnline(@PathVariable String userId) {
         boolean isOnline = loginHistoryService.isUserOnline(userId);
         return ResponseEntity.ok(new UserStatusResponse(userId, isOnline));
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<MessageResponse<Void>> pingOnline(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String userId = extractUserIdFromJwt.extractUserIdFromJwt(token);
+
+        loginHistoryService.pingOnline(userId);
+
+        return ResponseEntity.ok(
+                MessageResponse.<Void>builder()
+                        .message("Ping online thành công")
+                        .success(true)
+                        .statusCode(200)
+                        .build()
+        );
     }
 }
