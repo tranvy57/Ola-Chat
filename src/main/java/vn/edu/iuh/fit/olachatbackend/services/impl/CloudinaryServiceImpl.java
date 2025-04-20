@@ -21,6 +21,7 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.repositories.FileRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
+import vn.edu.iuh.fit.olachatbackend.utils.FileUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -52,10 +53,26 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+        
+        // Determine the resource type based on file content type
+        String resourceType = "image"; // default
+        if (file.getContentType() != null) {
+            String contentType = file.getContentType().toLowerCase();
+            if (contentType.contains("pdf") || contentType.contains("doc") || 
+                contentType.contains("xls") || contentType.contains("ppt") ||
+                contentType.contains("text") || contentType.contains("csv")) {
+                resourceType = "raw";
+            } else if (contentType.contains("video")) {
+                resourceType = "video";
+            }
+        }
+        
         Map<?, ?> uploadResult = cloudinary.uploader()
-                .upload(file.getBytes(), ObjectUtils.asMap("resource_type", "auto"));
+                .upload(file.getBytes(), ObjectUtils.asMap("resource_type", resourceType));
+        
         String url = uploadResult.get("secure_url").toString();
         String publicId = uploadResult.get("public_id").toString();
+        
         File fileUpload = File.builder()
                 .fileUrl(url)
                 .fileType(file.getContentType())
@@ -63,8 +80,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 .uploadedAt(LocalDateTime.now())
                 .uploadedBy(user)
                 .associatedIDMessageId(associatedIDMessageId)
-                .publicId(publicId) // Add publicId to the File entity
+                .publicId(publicId)
+                .resourceType(resourceType) // Store the resource type
                 .build();
+        
         fileRepository.save(fileUpload);
         return fileUpload;
     }
@@ -87,33 +106,46 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         File fileEntity = fileRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new NotFoundException("File not found"));
 
-        // Get the file URL from Cloudinary
-        Map<?, ?> resourceResult = cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
-        String fileUrl = resourceResult.get("secure_url").toString();
+        // Use the file URL directly from the database record instead of querying Cloudinary API
+        String fileUrl = fileEntity.getFileUrl();
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            throw new NotFoundException("File URL not found for public ID: " + publicId);
+        }
 
-        // Determine the file extension based on the file type
+        // Determine the file extension based on the file type using our utility
         String fileType = fileEntity.getFileType();
-        String fileExtension = fileType.substring(fileType.lastIndexOf('/') + 1);
+        String fileExtension = FileUtils.getExtensionFromMimeType(fileType);
 
         // Download the file using HttpURLConnection
-        URL url = new URL(fileUrl);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-
-        try (InputStream inputStream = connection.getInputStream()) {
-            byte[] fileData = inputStream.readAllBytes();
-
-            // Save the file to the src/main/resources/save directory with the correct extension
-            String saveDirectory = downloadDir;
-            java.io.File saveDir = new java.io.File(saveDirectory);
-            if (!saveDir.exists()) {
-                saveDir.mkdirs();
-            }
-            try (FileOutputStream fos = new FileOutputStream(saveDirectory + publicId + "." + fileExtension)) {
-                fos.write(fileData);
+        try {
+            URL url = new URL(fileUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                throw new IOException("Failed to download file. HTTP response code: " + responseCode);
             }
 
-            return fileData;
+            try (InputStream inputStream = connection.getInputStream()) {
+                byte[] fileData = inputStream.readAllBytes();
+
+                // Save the file to the download directory with the correct extension
+                String saveDirectory = downloadDir;
+                java.io.File saveDir = new java.io.File(saveDirectory);
+                if (!saveDir.exists()) {
+                    saveDir.mkdirs();
+                }
+                
+                String fileName = publicId + "." + fileExtension;
+                try (FileOutputStream fos = new FileOutputStream(saveDirectory + fileName)) {
+                    fos.write(fileData);
+                }
+
+                return fileData;
+            }
+        } catch (IOException e) {
+            throw new IOException("Error downloading file from Cloudinary: " + e.getMessage(), e);
         }
     }
 
@@ -127,3 +159,4 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         return uploadResult.get("url").toString();
     }
 }
+
