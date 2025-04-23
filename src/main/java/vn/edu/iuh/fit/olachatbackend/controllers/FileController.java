@@ -20,7 +20,6 @@ import vn.edu.iuh.fit.olachatbackend.entities.File;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.repositories.FileRepository;
 import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
-import vn.edu.iuh.fit.olachatbackend.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -64,7 +63,6 @@ public class FileController {
     }
 
     //download file
-    //download file
     @PostMapping("/download")
     public ResponseEntity<?> downloadFile(@RequestParam("publicId") String publicId) {
         try {
@@ -75,7 +73,6 @@ public class FileController {
             try {
                 byte[] fileData = cloudinaryService.downloadFile(publicId);
                 String originalFileName = fileEntity.getOriginalFileName();
-
                 return ResponseEntity.ok()
                         .header("Content-Disposition", "attachment; filename=\"" + originalFileName + "\"")
                         .body(Map.of(
@@ -110,7 +107,7 @@ public class FileController {
     @PostMapping("/upload/image")
     public ResponseEntity<String> uploadImage(
             @RequestParam("file") MultipartFile file)
-            throws IOException, IOException {
+            throws IOException {
         return ResponseEntity.ok(cloudinaryService.uploadImage(file));
     }
 

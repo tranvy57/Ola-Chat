@@ -21,7 +21,6 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.repositories.FileRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.CloudinaryService;
-import vn.edu.iuh.fit.olachatbackend.utils.FileUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
