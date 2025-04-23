@@ -64,24 +64,23 @@ public class FileController {
     }
 
     //download file
+    //download file
     @PostMapping("/download")
     public ResponseEntity<?> downloadFile(@RequestParam("publicId") String publicId) {
         try {
             // Get the file entity first to check its type
             File fileEntity = fileRepository.findByPublicId(publicId)
                     .orElseThrow(() -> new NotFoundException("File not found with public ID: " + publicId));
-            
+
             try {
                 byte[] fileData = cloudinaryService.downloadFile(publicId);
-                String fileType = fileEntity.getFileType();
-                String fileExtension = FileUtils.getExtensionFromMimeType(fileType);
-                String fileName = publicId + "." + fileExtension;
+                String originalFileName = fileEntity.getOriginalFileName();
 
                 return ResponseEntity.ok()
-                        .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                        .header("Content-Disposition", "attachment; filename=\"" + originalFileName + "\"")
                         .body(Map.of(
-                                "fileName", fileName,
-                                "location", downloadDir + fileName,
+                                "fileName", originalFileName,
+                                "location", downloadDir + originalFileName,
                                 "message", "Tải xuống thành công"
                         ));
             } catch (IOException e) {
