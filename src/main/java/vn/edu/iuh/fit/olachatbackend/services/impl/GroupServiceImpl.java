@@ -93,8 +93,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public ConversationDTO getGroupById(ObjectId id) {
-        Conversation conversation = conversationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Nhóm không tồn tại"));
+        Conversation conversation = findGroupById(id);
 
         // Get list userId from Participant
         List<String> userIds = participantRepository.findParticipantByConversationId(id)
@@ -124,7 +123,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void updateGroup(ObjectId groupId, GroupUpdateRequest request) {
-        Conversation group = conversationMapper.toEntity(getGroupById(groupId));
+        Conversation group = findGroupById(groupId);
 
         if (request.getName() != null && !request.getName().trim().isEmpty()) {
             group.setName(request.getName());
@@ -147,7 +146,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void joinGroup(ObjectId groupId) {
         User user = getCurrentUser();
-        if (participantRepository.existsByConversationIdAndUserId(groupId, user.getId())) {
+        if (isUserInGroup(groupId, user.getId())) {
             throw new BadRequestException("Bạn đã tham gia nhóm này rồi.");
         }
 
@@ -159,8 +158,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void leaveGroup(ObjectId groupId) {
         User user = getCurrentUser();
-        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, user.getId())
-                .orElseThrow(() -> new BadRequestException("Bạn không ở trong nhóm này."));
+        Participant participant = findParticipantInGroup(groupId, user.getId());
 
         if (participant.getRole() == ParticipantRole.ADMIN) {
             throw new BadRequestException("Nhóm trưởng không thể rời nhóm.");
@@ -171,7 +169,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void addMembers(ObjectId groupId, AddMemberRequest request) {
-        Conversation group = conversationMapper.toEntity(getGroupById(groupId));
+        Conversation group = findGroupById(groupId);
 
         List<Participant> existingMembers = participantRepository.findByConversationId(groupId);
         Set<String> existingUserIds = existingMembers.stream().map(Participant::getUserId).collect(Collectors.toSet());
@@ -192,19 +190,16 @@ public class GroupServiceImpl implements GroupService {
 
         participantRepository.saveAll(newMembers);
         group.setUpdatedAt(LocalDateTime.now());
-        conversationMapper.toDTO(conversationRepository.save(group));
+        conversationRepository.save(group);
     }
 
     @Override
     public void removeUserFromGroup(ObjectId groupId, String userId) {
+        // Find the group
+        findGroupById(groupId);
 
-        // search
-        Conversation conversation = conversationRepository.findById(groupId)
-                .orElseThrow(() -> new NotFoundException("Nhóm không tồn tại"));
-
-        // Check if user exist in group
-        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new NotFoundException("Thành viên không tồn tại trong nhóm"));
+        // Check if user exists in group
+        Participant participant = findParticipantInGroup(groupId, userId);
 
         // Check remove user
         if (participant.getRole() == ParticipantRole.ADMIN) {
@@ -221,13 +216,10 @@ public class GroupServiceImpl implements GroupService {
     public void transferGroupOwner(ObjectId groupId, String newOwnerId) {
         User user = getCurrentUser();
 
-        Participant requester = participantRepository.findByConversationIdAndUserId(groupId, user.getId())
-                .orElseThrow(() -> new BadRequestException("Bạn không thuộc nhóm này."));
-
+        Participant requester = findParticipantInGroup(groupId, user.getId());
         validateOwner(groupId, user.getId());
 
-        Participant newOwner = participantRepository.findByConversationIdAndUserId(groupId, newOwnerId)
-                .orElseThrow(() -> new NotFoundException("Người nhận quyền không tồn tại trong nhóm."));
+        Participant newOwner = findParticipantInGroup(groupId, newOwnerId);
 
         // Update role
         requester.setRole(ParticipantRole.MODERATOR);
@@ -241,13 +233,10 @@ public class GroupServiceImpl implements GroupService {
     public void setModerator(ObjectId groupId, String userId) {
         User user = getCurrentUser();
 
-        Participant requester = participantRepository.findByConversationIdAndUserId(groupId, user.getId())
-                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
-
+        Participant requester = findParticipantInGroup(groupId, user.getId());
         validateOwner(groupId, user.getId());
 
-        Participant member = participantRepository.findByConversationIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new NotFoundException("Thành viên không tồn tại trong nhóm."));
+        Participant member = findParticipantInGroup(groupId, userId);
 
         if (member.getRole() == ParticipantRole.ADMIN) {
             throw new BadRequestException("Không thể gán quyền cho nhóm trưởng.");
@@ -263,17 +252,48 @@ public class GroupServiceImpl implements GroupService {
         participantRepository.save(member);
     }
 
+    /**
+     * Check if a group exists and return it
+     * @param groupId ID of the group to find
+     * @return Conversation object if found
+     * @throws NotFoundException if group doesn't exist
+     */
+    private Conversation findGroupById(ObjectId groupId) {
+        return conversationRepository.findById(groupId)
+                .orElseThrow(() -> new NotFoundException("Nhóm không tồn tại"));
+    }
+
+    /**
+     * Check if a user is a member of a group
+     * @param groupId ID of the group
+     * @param userId ID of the user
+     * @return true if user is in the group, false otherwise
+     */
+    private boolean isUserInGroup(ObjectId groupId, String userId) {
+        return participantRepository.existsByConversationIdAndUserId(groupId, userId);
+    }
+
+    /**
+     * Find a participant in a group or throw exception if not found
+     * @param groupId ID of the group
+     * @param userId ID of the user
+     * @return Participant object if found
+     * @throws BadRequestException if user is not in the group
+     */
+    private Participant findParticipantInGroup(ObjectId groupId, String userId) {
+        return participantRepository.findByConversationIdAndUserId(groupId, userId)
+                .orElseThrow(() -> new BadRequestException("Người dùng không tồn tại trong nhóm"));
+    }
+
     private void validateOwner(ObjectId groupId, String userId) {
-        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
+        Participant participant = findParticipantInGroup(groupId, userId);
         if (participant.getRole() != ParticipantRole.ADMIN) {
             throw new BadRequestException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
         }
     }
 
     private void validateOwnerOrModerator(ObjectId groupId, String requesterId, Participant targetParticipant) {
-        Participant requester = participantRepository.findByConversationIdAndUserId(groupId, requesterId)
-                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
+        Participant requester = findParticipantInGroup(groupId, requesterId);
 
         if (requester.getRole() == ParticipantRole.ADMIN) {
             return;
@@ -281,12 +301,12 @@ public class GroupServiceImpl implements GroupService {
 
         if (requester.getRole() == ParticipantRole.MODERATOR) {
             if (targetParticipant.getRole() != ParticipantRole.MEMBER) {
-                throw new AccessDeniedException("Bạn chỉ có thể xóa thành viên thường (MEMBER).");
+                throw new BadRequestException("Bạn chỉ có thể xóa thành viên thường (MEMBER).");
             }
             return;
         }
 
-        throw new AccessDeniedException("Bạn không có quyền xóa thành viên.");
+        throw new BadRequestException("Bạn không có quyền xóa thành viên.");
     }
 
     private User getCurrentUser() {
