@@ -217,14 +217,6 @@ public class GroupServiceImpl implements GroupService {
         participantRepository.delete(participant);
     }
 
-    private void validateOwner(ObjectId groupId, String userId) {
-        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
-        if (participant.getRole() != ParticipantRole.ADMIN) {
-            throw new BadRequestException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
-        }
-    }
-
     @Override
     public void transferGroupOwner(ObjectId groupId, String newOwnerId) {
         User user = getCurrentUser();
@@ -243,6 +235,40 @@ public class GroupServiceImpl implements GroupService {
 
         participantRepository.save(requester);
         participantRepository.save(newOwner);
+    }
+
+    @Override
+    public void setModerator(ObjectId groupId, String userId) {
+        User user = getCurrentUser();
+
+        Participant requester = participantRepository.findByConversationIdAndUserId(groupId, user.getId())
+                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
+
+        validateOwner(groupId, user.getId());
+
+        Participant member = participantRepository.findByConversationIdAndUserId(groupId, userId)
+                .orElseThrow(() -> new NotFoundException("Thành viên không tồn tại trong nhóm."));
+
+        if (member.getRole() == ParticipantRole.ADMIN) {
+            throw new BadRequestException("Không thể gán quyền cho nhóm trưởng.");
+        }
+
+        // Check current number of moderator
+        long currentDeputyCount = participantRepository.countByConversationIdAndRole(groupId, ParticipantRole.MODERATOR);
+        if (currentDeputyCount >= 2) {
+            throw new BadRequestException("Nhóm chỉ cho phép tối đa 2 phó nhóm.");
+        }
+
+        member.setRole(ParticipantRole.MODERATOR);
+        participantRepository.save(member);
+    }
+
+    private void validateOwner(ObjectId groupId, String userId) {
+        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
+                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
+        if (participant.getRole() != ParticipantRole.ADMIN) {
+            throw new BadRequestException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
+        }
     }
 
     private void validateOwnerOrModerator(ObjectId groupId, String requesterId, Participant targetParticipant) {
