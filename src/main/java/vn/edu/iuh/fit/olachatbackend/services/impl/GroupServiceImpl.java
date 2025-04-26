@@ -252,6 +252,26 @@ public class GroupServiceImpl implements GroupService {
         participantRepository.save(member);
     }
 
+    @Override
+    public void removeModerator(ObjectId groupId, String userId) {
+        User user = getCurrentUser();
+
+        Participant requester = findParticipantInGroup(groupId, user.getId());
+
+        validateOwner(groupId, user.getId());
+
+        // Check moderator
+        Participant deputy = findParticipantInGroup(groupId, userId);
+
+        if (deputy.getRole() != ParticipantRole.MODERATOR) {
+            throw new BadRequestException("Thành viên này không phải là phó nhóm.");
+        }
+
+        // Remove moderator role: return to MEMBER
+        deputy.setRole(ParticipantRole.MEMBER);
+        participantRepository.save(deputy);
+    }
+
     /**
      * Check if a group exists and return it
      * @param groupId ID of the group to find

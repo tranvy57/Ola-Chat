@@ -35,4 +35,6 @@ public interface GroupService {
     void transferGroupOwner(ObjectId objectId, String newOwnerId);
 
     void setModerator(ObjectId objectId, String userId);
+
+    void removeModerator(ObjectId objectId, String userId);
 }

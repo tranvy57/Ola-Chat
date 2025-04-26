@@ -108,17 +108,13 @@ public class GroupController {
             return ResponseEntity.badRequest().body(new MessageResponse<>(400, e.getMessage(), false, null));
         }
     }
-//
-//    @DeleteMapping("/{id}/remove-deputy/{deputyId}")
-//    public ResponseEntity<MessageResponse<Object>> removeDeputyGroupLeader(
-//            @PathVariable String id,
-//            @PathVariable String deputyId) {
-//        try {
-//            // Group owner ID will be extracted from JWT in service
-//            groupService.removeDeputyGroupLeader(new ObjectId(id), deputyId);
-//            return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa phó nhóm thành công", true));
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.badRequest().body(new MessageResponse<>(400, e.getMessage(), false, null));
-//        }
-//    }
+
+    @DeleteMapping("/{id}/remove-moderator/{userId}")
+    public ResponseEntity<MessageResponse<Object>> removeDeputyGroupLeader(
+            @PathVariable String id,
+            @PathVariable String userId) {
+        groupService.removeModerator(new ObjectId(id), userId);
+        return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa quyền phó nhóm thành công", true));
+    }
+
 }
