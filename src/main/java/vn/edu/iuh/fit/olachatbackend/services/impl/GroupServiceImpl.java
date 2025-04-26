@@ -147,7 +147,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void joinGroup(ObjectId groupId, String userId) {
         if (participantRepository.existsByConversationIdAndUserId(groupId, userId)) {
-            throw new IllegalStateException("Bạn đã tham gia nhóm này rồi.");
+            throw new BadRequestException("Bạn đã tham gia nhóm này rồi.");
         }
 
         participantRepository.save(new Participant(
@@ -158,17 +158,17 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void leaveGroup(ObjectId groupId, String userId) {
         Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
-                .orElseThrow(() -> new IllegalStateException("Bạn không ở trong nhóm này."));
+                .orElseThrow(() -> new BadRequestException("Bạn không ở trong nhóm này."));
 
         if (participant.getRole() == ParticipantRole.MODERATOR) {
-            throw new IllegalStateException("Nhóm trưởng không thể rời nhóm.");
+            throw new BadRequestException("Nhóm trưởng không thể rời nhóm.");
         }
 
         participantRepository.delete(participant);
     }
 
     @Override
-    public void addMembers(ObjectId groupId, String ownerId, AddMemberRequest request) {
+    public void addMembers(ObjectId groupId, AddMemberRequest request) {
         Conversation group = conversationMapper.toEntity(getGroupById(groupId));
 
         List<Participant> existingMembers = participantRepository.findByConversationId(groupId);

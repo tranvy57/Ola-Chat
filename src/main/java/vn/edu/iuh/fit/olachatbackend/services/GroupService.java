@@ -28,7 +28,7 @@ public interface GroupService {
     void joinGroup(ObjectId groupId, String userId);
     void leaveGroup(ObjectId groupId, String userId);
 
-    void addMembers(ObjectId objectId, String ownerId, AddMemberRequest request);
+    void addMembers(ObjectId objectId, AddMemberRequest request);
 
     void removeUserFromGroup(ObjectId groupId, String userId, String requesterId);
 }
