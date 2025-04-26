@@ -198,7 +198,6 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void removeUserFromGroup(ObjectId groupId, String userId) {
 
-
         // search
         Conversation conversation = conversationRepository.findById(groupId)
                 .orElseThrow(() -> new NotFoundException("Nhóm không tồn tại"));
@@ -207,7 +206,12 @@ public class GroupServiceImpl implements GroupService {
         Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
                 .orElseThrow(() -> new NotFoundException("Thành viên không tồn tại trong nhóm"));
 
-        validateOwner(groupId, getCurrentUser().getId());
+        // Check remove user
+        if (participant.getRole() == ParticipantRole.ADMIN) {
+            throw new BadRequestException("Không thể xóa trưởng nhóm!");
+        }
+
+        validateOwnerOrModerator(groupId, getCurrentUser().getId(), participant);
 
         // remove
         participantRepository.delete(participant);
@@ -219,6 +223,24 @@ public class GroupServiceImpl implements GroupService {
         if (participant.getRole() != ParticipantRole.ADMIN) {
             throw new AccessDeniedException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
         }
+    }
+
+    private void validateOwnerOrModerator(ObjectId groupId, String requesterId, Participant targetParticipant) {
+        Participant requester = participantRepository.findByConversationIdAndUserId(groupId, requesterId)
+                .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
+
+        if (requester.getRole() == ParticipantRole.ADMIN) {
+            return;
+        }
+
+        if (requester.getRole() == ParticipantRole.MODERATOR) {
+            if (targetParticipant.getRole() != ParticipantRole.MEMBER) {
+                throw new AccessDeniedException("Bạn chỉ có thể xóa thành viên thường (MEMBER).");
+            }
+            return;
+        }
+
+        throw new AccessDeniedException("Bạn không có quyền xóa thành viên.");
     }
 
     private User getCurrentUser() {
