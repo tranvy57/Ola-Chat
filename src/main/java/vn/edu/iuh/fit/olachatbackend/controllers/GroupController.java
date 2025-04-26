@@ -32,7 +32,7 @@ public class GroupController {
     @PostMapping
     public ResponseEntity<MessageResponse<ConversationDTO>> createGroup(@RequestBody GroupRequest request) {
         try {
-            ConversationDTO group = groupService.createGroup(request.getCreatorId(), request.getName(), request.getAvatar(), request.getUserIds());
+            ConversationDTO group = groupService.createGroup(request.getName(), request.getAvatar(), request.getUserIds());
             return ResponseEntity.ok(new MessageResponse<>(200, "Tạo nhóm thành công", true, group));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse<>(400, e.getMessage(), false, null));
@@ -46,27 +46,27 @@ public class GroupController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MessageResponse<Object>> updateGroup(@PathVariable String id, @RequestParam String userId,
+    public ResponseEntity<MessageResponse<Object>> updateGroup(@PathVariable String id,
                                                                @RequestBody GroupUpdateRequest request) {
-        groupService.updateGroup(new ObjectId(id), userId, request);
+        groupService.updateGroup(new ObjectId(id), request);
         return ResponseEntity.ok(new MessageResponse<>(200, "Cập nhật nhóm thành công", true));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<MessageResponse<Object>> deleteGroup(@PathVariable String id, @RequestParam String userId) {
-        groupService.deleteGroup(new ObjectId(id), userId);
+    public ResponseEntity<MessageResponse<Object>> deleteGroup(@PathVariable String id) {
+        groupService.deleteGroup(new ObjectId(id));
         return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa nhóm thành công", true));
     }
 
     @PostMapping("/{id}/join")
-    public ResponseEntity<MessageResponse<Object>> joinGroup(@PathVariable String id, @RequestParam String userId) {
-        groupService.joinGroup(new ObjectId(id), userId);
+    public ResponseEntity<MessageResponse<Object>> joinGroup(@PathVariable String id) {
+        groupService.joinGroup(new ObjectId(id));
         return ResponseEntity.ok(new MessageResponse<>(200, "Tham gia nhóm thành công", true));
     }
 
     @PostMapping("/{id}/leave")
-    public ResponseEntity<MessageResponse<Object>> leaveGroup(@PathVariable String id, @RequestParam String userId) {
-        groupService.leaveGroup(new ObjectId(id), userId);
+    public ResponseEntity<MessageResponse<Object>> leaveGroup(@PathVariable String id) {
+        groupService.leaveGroup(new ObjectId(id));
         return ResponseEntity.ok(new MessageResponse<>(200, "Rời nhóm thành công", true));
     }
 
@@ -80,9 +80,8 @@ public class GroupController {
     @DeleteMapping("/{id}/remove/{userId}")
     public ResponseEntity<MessageResponse<Object>> removeUserFromGroup(
             @PathVariable String id,
-            @PathVariable String userId,
-            @RequestHeader("requesterId") String requesterId) {
-        groupService.removeUserFromGroup(new ObjectId(id), userId, requesterId);
+            @PathVariable String userId) {
+        groupService.removeUserFromGroup(new ObjectId(id), userId);
         return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa thành viên khỏi nhóm", true));
     }
 }

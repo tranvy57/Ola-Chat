@@ -20,15 +20,15 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.GroupUpdateRequest;
 import java.util.List;
 
 public interface GroupService {
-    ConversationDTO createGroup(String creatorId, String name, String avatar, List<String> userIds);
-    void updateGroup(ObjectId groupId, String userId, GroupUpdateRequest request);
+    ConversationDTO createGroup(String name, String avatar, List<String> userIds);
+    void updateGroup(ObjectId groupId, GroupUpdateRequest request);
     ConversationDTO getGroupById(ObjectId id);
 
-    void deleteGroup(ObjectId groupId, String userId);
-    void joinGroup(ObjectId groupId, String userId);
-    void leaveGroup(ObjectId groupId, String userId);
+    void deleteGroup(ObjectId groupId);
+    void joinGroup(ObjectId groupId);
+    void leaveGroup(ObjectId groupId);
 
     void addMembers(ObjectId objectId, AddMemberRequest request);
 
-    void removeUserFromGroup(ObjectId groupId, String userId, String requesterId);
+    void removeUserFromGroup(ObjectId groupId, String userId);
 }

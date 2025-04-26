@@ -15,14 +15,12 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.ConversationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AddMemberRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.GroupUpdateRequest;
-import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
-import vn.edu.iuh.fit.olachatbackend.entities.LastMessage;
-import vn.edu.iuh.fit.olachatbackend.entities.Message;
-import vn.edu.iuh.fit.olachatbackend.entities.Participant;
+import vn.edu.iuh.fit.olachatbackend.entities.*;
 import vn.edu.iuh.fit.olachatbackend.enums.ConversationType;
 import vn.edu.iuh.fit.olachatbackend.enums.ParticipantRole;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
@@ -31,6 +29,7 @@ import vn.edu.iuh.fit.olachatbackend.mappers.ConversationMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.ConversationRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.MessageRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
+import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
 import vn.edu.iuh.fit.olachatbackend.services.GroupService;
 
 import java.time.LocalDateTime;
@@ -46,9 +45,10 @@ public class GroupServiceImpl implements GroupService {
     private final ParticipantRepository participantRepository;
     private final ConversationMapper conversationMapper;
     private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public ConversationDTO createGroup(String creatorId, String name, String avatar, List<String> userIds) {
+    public ConversationDTO createGroup(String name, String avatar, List<String> userIds) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Tên nhóm không được để trống");
         }
@@ -71,8 +71,8 @@ public class GroupServiceImpl implements GroupService {
         // Assign moderator to creator
         participants.add(Participant.builder()
                 .conversationId(savedGroup.getId())
-                .userId(creatorId)
-                .role(ParticipantRole.MODERATOR)
+                .userId(getCurrentUser().getId())
+                .role(ParticipantRole.ADMIN)
                 .joinedAt(LocalDateTime.now())
                 .build());
 
@@ -123,7 +123,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public void updateGroup(ObjectId groupId, String userId, GroupUpdateRequest request) {
+    public void updateGroup(ObjectId groupId, GroupUpdateRequest request) {
         Conversation group = conversationMapper.toEntity(getGroupById(groupId));
 
         if (request.getName() != null && !request.getName().trim().isEmpty()) {
@@ -138,29 +138,31 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public void deleteGroup(ObjectId groupId, String userId) {
-        validateOwner(groupId, userId);
+    public void deleteGroup(ObjectId groupId) {
+        validateOwner(groupId, getCurrentUser().getId());
         conversationRepository.deleteById(groupId);
         participantRepository.deleteByConversationId(groupId);
     }
 
     @Override
-    public void joinGroup(ObjectId groupId, String userId) {
-        if (participantRepository.existsByConversationIdAndUserId(groupId, userId)) {
+    public void joinGroup(ObjectId groupId) {
+        User user = getCurrentUser();
+        if (participantRepository.existsByConversationIdAndUserId(groupId, user.getId())) {
             throw new BadRequestException("Bạn đã tham gia nhóm này rồi.");
         }
 
         participantRepository.save(new Participant(
-                new ObjectId(), groupId, userId, ParticipantRole.MEMBER, LocalDateTime.now()
+                new ObjectId(), groupId, user.getId(), ParticipantRole.MEMBER, LocalDateTime.now()
         ));
     }
 
     @Override
-    public void leaveGroup(ObjectId groupId, String userId) {
-        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
+    public void leaveGroup(ObjectId groupId) {
+        User user = getCurrentUser();
+        Participant participant = participantRepository.findByConversationIdAndUserId(groupId, user.getId())
                 .orElseThrow(() -> new BadRequestException("Bạn không ở trong nhóm này."));
 
-        if (participant.getRole() == ParticipantRole.MODERATOR) {
+        if (participant.getRole() == ParticipantRole.ADMIN) {
             throw new BadRequestException("Nhóm trưởng không thể rời nhóm.");
         }
 
@@ -194,7 +196,9 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public void removeUserFromGroup(ObjectId groupId, String userId, String requesterId) {
+    public void removeUserFromGroup(ObjectId groupId, String userId) {
+
+
         // search
         Conversation conversation = conversationRepository.findById(groupId)
                 .orElseThrow(() -> new NotFoundException("Nhóm không tồn tại"));
@@ -203,7 +207,7 @@ public class GroupServiceImpl implements GroupService {
         Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
                 .orElseThrow(() -> new NotFoundException("Thành viên không tồn tại trong nhóm"));
 
-        validateOwner(groupId, requesterId);
+        validateOwner(groupId, getCurrentUser().getId());
 
         // remove
         participantRepository.delete(participant);
@@ -212,8 +216,17 @@ public class GroupServiceImpl implements GroupService {
     private void validateOwner(ObjectId groupId, String userId) {
         Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
                 .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
-        if (participant.getRole() != ParticipantRole.MODERATOR) {
+        if (participant.getRole() != ParticipantRole.ADMIN) {
             throw new AccessDeniedException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
         }
+    }
+
+    private User getCurrentUser() {
+        // Check user
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        return userRepository.findByUsername(name)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
     }
 }
