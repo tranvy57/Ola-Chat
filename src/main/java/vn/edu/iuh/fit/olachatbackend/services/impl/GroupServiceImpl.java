@@ -169,9 +169,13 @@ public class GroupServiceImpl implements GroupService {
             throw new BadRequestException("Bạn đã tham gia nhóm này rồi.");
         }
 
-        participantRepository.save(new Participant(
-                new ObjectId(), groupId, user.getId(), ParticipantRole.MEMBER, LocalDateTime.now()
-        ));
+        participantRepository.save(Participant.builder()
+                .id(new ObjectId())
+                .conversationId(groupId)
+                .userId(user.getId())
+                .role(ParticipantRole.MEMBER)
+                .joinedAt(LocalDateTime.now())
+                .build());
     }
 
     @Override
@@ -289,6 +293,23 @@ public class GroupServiceImpl implements GroupService {
         // Remove moderator role: return to MEMBER
         deputy.setRole(ParticipantRole.MEMBER);
         participantRepository.save(deputy);
+    }
+
+
+    @Override
+    public void muteConversation(ObjectId groupId) {
+        User user = getCurrentUser();
+        Participant participant = findParticipantInGroup(groupId, user.getId());
+        participant.setMuted(true);
+        participantRepository.save(participant);
+    }
+
+    @Override
+    public void unmuteConversation(ObjectId groupId) {
+        User user = getCurrentUser();
+        Participant participant = findParticipantInGroup(groupId, user.getId());
+        participant.setMuted(false);
+        participantRepository.save(participant);
     }
 
     /**

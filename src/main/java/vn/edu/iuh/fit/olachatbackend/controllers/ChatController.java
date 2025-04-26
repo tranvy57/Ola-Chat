@@ -51,11 +51,16 @@ public class ChatController {
     private final DeviceTokenRepository deviceTokenRepository;
     private final MessageMapper messageMapper;
 
-    // Public chat
+    // Chat room
     @MessageMapping("/message")
-    @SendTo("/chatroom/public")
-    public MessageRequest receivePublicMessage(@Payload MessageRequest messageDTO) {
-        return messageDTO;
+    public MessageResponseDTO receivePublicMessage(@Payload MessageRequest messageDTO) {
+        System.out.println("Message from client for chat room: "+ messageDTO);
+        messageService.save(messageDTO);
+
+        template.convertAndSend("/chatroom/" + messageDTO.getConversationId(), messageDTO);
+        UserResponse sender = userServiceImpl.getUserById(messageDTO.getSenderId());
+        notificationService.notifyConversation(messageDTO.getConversationId(), messageDTO.getSenderId(), "Tin nhắn mới", "Bạn có tin nhắn từ " + sender.getDisplayName(), NotificationType.MESSAGE);
+        return messageMapper.toResponseDTO(messageDTO);
     }
 
     // Private chat
@@ -65,7 +70,8 @@ public class ChatController {
         messageService.save(messageDTO);
 
         template.convertAndSend("/user/" + messageDTO.getConversationId() + "/private", messageDTO);
-        notifyRecipients(messageDTO);
+        UserResponse sender = userServiceImpl.getUserById(messageDTO.getSenderId());
+        notificationService.notifyConversation(messageDTO.getConversationId(), messageDTO.getSenderId(), "Tin nhắn mới", "Bạn có tin nhắn từ " + sender.getDisplayName(), NotificationType.MESSAGE);
         return messageMapper.toResponseDTO(messageDTO);
     }
 
@@ -74,39 +80,6 @@ public class ChatController {
         System.out.println("Message Recall from client: "+ messageDTO);
         MessageRequest recalled = messageService.recallMessage(messageDTO.getId(), messageDTO.getSenderId());
         template.convertAndSend("/user/" + recalled.getConversationId() + "/private", recalled);
-    }
-
-    private void notifyRecipients(MessageRequest messageDTO) {
-        // Tìm conversation
-        Conversation conversation = conversationRepository.findById(new ObjectId(messageDTO.getConversationId()))
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy cuộc trò chuyện"));
-
-        // Tìm sender (để lấy displayName)
-        UserResponse sender = userServiceImpl.getUserById(messageDTO.getSenderId());
-
-        // Lọc ra danh sách người nhận (tất cả trừ sender)
-        List<String> receiverIds = participantRepository.findParticipantByConversationId(conversation.getId()).stream()
-                .map(Participant::getUserId) // lấy userId từ mỗi Participant
-                .filter(userId -> !userId.equals(messageDTO.getSenderId())) // bỏ sender ra
-                .toList();
-
-        for (String receiverId : receiverIds) {
-            DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
-            if (deviceToken != null) {
-                NotificationRequest notificationRequest = NotificationRequest.builder()
-                        .title("Tin nhắn mới")
-                        .body("Bạn có tin nhắn từ " + sender.getDisplayName())
-                        .token(deviceToken.getToken())
-                        .type(NotificationType.MESSAGE)
-                        .senderId(sender.getUserId())
-                        .receiverId(receiverId)
-                        .build();
-
-                notificationService.sendNotification(notificationRequest);
-            } else {
-                System.out.println("Không tìm thấy token cho user: " + receiverId);
-            }
-        }
     }
 
 

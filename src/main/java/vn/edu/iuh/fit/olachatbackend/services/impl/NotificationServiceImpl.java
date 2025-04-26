@@ -15,6 +15,7 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,13 +23,19 @@ import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.NotificationPageDTO;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.NotificationRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
+import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
 import vn.edu.iuh.fit.olachatbackend.entities.DeviceToken;
 import vn.edu.iuh.fit.olachatbackend.entities.Notification;
+import vn.edu.iuh.fit.olachatbackend.entities.Participant;
+import vn.edu.iuh.fit.olachatbackend.enums.NotificationType;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.mappers.NotificationMapper;
+import vn.edu.iuh.fit.olachatbackend.repositories.ConversationRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.DeviceTokenRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.NotificationRepository;
+import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.services.NotificationService;
 
 import java.time.LocalDateTime;
@@ -43,6 +50,9 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
     private final DeviceTokenRepository deviceTokenRepository;
+    private final ConversationRepository conversationRepository;
+    private final UserServiceImpl userServiceImpl;
+    private final ParticipantRepository participantRepository;
 
     @Override
     public void registerDevice(String userId, String token) {
@@ -116,6 +126,37 @@ public class NotificationServiceImpl implements NotificationService {
                     throw new NotFoundException("Thông báo không tồn tại với ID: " + notificationId);
                 }
         );
+    }
+
+    @Override
+    public void notifyConversation(String conversationId, String senderId, String title, String body, NotificationType type) {
+        Conversation conversation = conversationRepository.findById(new ObjectId(conversationId))
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy cuộc trò chuyện"));
+
+        UserResponse sender = userServiceImpl.getUserById(senderId);
+
+        List<Participant> participants = participantRepository.findParticipantByConversationId(new ObjectId(conversationId));
+
+        for (Participant participant : participants) {
+            String receiverId = participant.getUserId();
+
+            if (receiverId.equals(senderId)) continue;
+            if (participant.isMuted()) continue;
+
+            DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
+            if (deviceToken == null) continue;
+
+            NotificationRequest notificationRequest = NotificationRequest.builder()
+                    .title(title)
+                    .body(body)
+                    .token(deviceToken.getToken())
+                    .type(type)
+                    .senderId(senderId)
+                    .receiverId(receiverId)
+                    .build();
+
+            sendNotification(notificationRequest);
+        }
     }
 
 }

@@ -117,4 +117,17 @@ public class GroupController {
         return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa quyền phó nhóm thành công", true));
     }
 
+    @PostMapping("/{groupId}/mute")
+    public ResponseEntity<MessageResponse<Object>> muteConversation(@PathVariable String groupId) {
+        groupService.muteConversation(new ObjectId(groupId));
+        return ResponseEntity.ok(new MessageResponse<>(200, "Đã tắt thông báo nhóm", true));
+    }
+
+    @PostMapping("/{groupId}/unmute")
+    public ResponseEntity<MessageResponse<Object>> unmuteConversation(@PathVariable String groupId) {
+        groupService.unmuteConversation(new ObjectId(groupId));
+        return ResponseEntity.ok(new MessageResponse<>(200, "Đã bật lại thông báo nhóm", true));
+    }
+
+
 }

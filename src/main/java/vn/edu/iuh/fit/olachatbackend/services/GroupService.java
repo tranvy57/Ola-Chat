@@ -37,4 +37,8 @@ public interface GroupService {
     void setModerator(ObjectId objectId, String userId);
 
     void removeModerator(ObjectId objectId, String userId);
+
+    void muteConversation(ObjectId objectId);
+
+    void unmuteConversation(ObjectId objectId);
 }
