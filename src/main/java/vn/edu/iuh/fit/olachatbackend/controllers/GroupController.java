@@ -84,4 +84,42 @@ public class GroupController {
         groupService.removeUserFromGroup(new ObjectId(id), userId);
         return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa thành viên khỏi nhóm", true));
     }
+
+    @PostMapping("/{id}/transfer-owner/{newOwnerId}")
+    public ResponseEntity<MessageResponse<Object>> transferGroupOwnership(
+            @PathVariable String id,
+            @PathVariable String newOwnerId) {
+        try {
+            groupService.transferGroupOwner(new ObjectId(id), newOwnerId);
+            return ResponseEntity.ok(new MessageResponse<>(200, "Đã chuyển quyền trưởng nhóm thành công", true));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse<>(400, e.getMessage(), false, null));
+        }
+    }
+
+//    @PostMapping("/{id}/add-deputy/{deputyId}")
+//    public ResponseEntity<MessageResponse<Object>> addDeputyGroupLeader(
+//            @PathVariable String id,
+//            @PathVariable String deputyId) {
+//        try {
+//            // Group owner ID will be extracted from JWT in service
+//            groupService.addDeputyGroupLeader(new ObjectId(id), deputyId);
+//            return ResponseEntity.ok(new MessageResponse<>(200, "Đã thêm phó nhóm thành công", true));
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.badRequest().body(new MessageResponse<>(400, e.getMessage(), false, null));
+//        }
+//    }
+//
+//    @DeleteMapping("/{id}/remove-deputy/{deputyId}")
+//    public ResponseEntity<MessageResponse<Object>> removeDeputyGroupLeader(
+//            @PathVariable String id,
+//            @PathVariable String deputyId) {
+//        try {
+//            // Group owner ID will be extracted from JWT in service
+//            groupService.removeDeputyGroupLeader(new ObjectId(id), deputyId);
+//            return ResponseEntity.ok(new MessageResponse<>(200, "Đã xóa phó nhóm thành công", true));
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.badRequest().body(new MessageResponse<>(400, e.getMessage(), false, null));
+//        }
+//    }
 }

@@ -31,4 +31,6 @@ public interface GroupService {
     void addMembers(ObjectId objectId, AddMemberRequest request);
 
     void removeUserFromGroup(ObjectId groupId, String userId);
+
+    void transferGroupOwner(ObjectId objectId, String newOwnerId);
 }

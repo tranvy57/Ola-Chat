@@ -221,8 +221,28 @@ public class GroupServiceImpl implements GroupService {
         Participant participant = participantRepository.findByConversationIdAndUserId(groupId, userId)
                 .orElseThrow(() -> new IllegalStateException("Bạn không thuộc nhóm này."));
         if (participant.getRole() != ParticipantRole.ADMIN) {
-            throw new AccessDeniedException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
+            throw new BadRequestException("Chỉ nhóm trưởng mới có quyền thực hiện hành động này.");
         }
+    }
+
+    @Override
+    public void transferGroupOwner(ObjectId groupId, String newOwnerId) {
+        User user = getCurrentUser();
+
+        Participant requester = participantRepository.findByConversationIdAndUserId(groupId, user.getId())
+                .orElseThrow(() -> new BadRequestException("Bạn không thuộc nhóm này."));
+
+        validateOwner(groupId, user.getId());
+
+        Participant newOwner = participantRepository.findByConversationIdAndUserId(groupId, newOwnerId)
+                .orElseThrow(() -> new NotFoundException("Người nhận quyền không tồn tại trong nhóm."));
+
+        // Update role
+        requester.setRole(ParticipantRole.MODERATOR);
+        newOwner.setRole(ParticipantRole.ADMIN);
+
+        participantRepository.save(requester);
+        participantRepository.save(newOwner);
     }
 
     private void validateOwnerOrModerator(ObjectId groupId, String requesterId, Participant targetParticipant) {
