@@ -95,9 +95,25 @@ public class GroupServiceImpl implements GroupService {
     public ConversationDTO getGroupById(ObjectId id) {
         Conversation conversation = findGroupById(id);
 
-        // Get list userId from Participant
-        List<String> userIds = participantRepository.findParticipantByConversationId(id)
-                .stream().map(Participant::getUserId).collect(Collectors.toList());
+        // Get list participant
+        List<Participant> participants = participantRepository.findParticipantByConversationId(id);
+
+        // userIds
+        List<String> userIds = participants.stream()
+                .map(Participant::getUserId)
+                .collect(Collectors.toList());
+
+        // moderatorIds
+        List<String> moderatorIds = participants.stream()
+                .filter(p -> p.getRole() == ParticipantRole.MODERATOR)
+                .map(Participant::getUserId)
+                .collect(Collectors.toList());
+
+        String adminId = participants.stream()
+                .filter(p -> p.getRole() == ParticipantRole.ADMIN)
+                .map(Participant::getUserId)
+                .findFirst()
+                .orElse(null);
 
         // Get last message
         if (conversation.getLastMessage() == null) {
@@ -117,9 +133,12 @@ public class GroupServiceImpl implements GroupService {
         // Convert to DTO
         ConversationDTO conversationDTO = conversationMapper.toDTO(conversation);
         conversationDTO.setUserIds(userIds);
+        conversationDTO.setModeratorIds(moderatorIds);
+        conversationDTO.setAdminId(adminId);
 
         return conversationDTO;
     }
+
 
     @Override
     public void updateGroup(ObjectId groupId, GroupUpdateRequest request) {
