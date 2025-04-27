@@ -73,8 +73,6 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             log.error("Lỗi khi gửi thông báo {}", e.getMessage());
         }
 
-
-
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);

@@ -62,7 +62,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void registerDevice(RegisterDeviceRequest request) {
         validateDeviceRequest(request);
 
-        DeviceToken deviceToken = deviceTokenRepository.findByToken(request.getToken());
+        DeviceToken deviceToken = deviceTokenRepository.findByDeviceId(request.getDeviceId());
 
         if (deviceToken == null) {
             // Create new device token
@@ -70,6 +70,7 @@ public class NotificationServiceImpl implements NotificationService {
             deviceToken.setToken(request.getToken());
             logger.info("Creating new device token for user {}", request.getUserId());
         } else {
+            deviceToken.setToken(request.getToken());
             logger.info("Updating existing device token for user {}", request.getUserId());
         }
 
@@ -125,7 +126,7 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (DataAccessException e) {
             throw new InternalServerErrorException("Error accessing data: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Failed to send notification: ", e);
+            logger.error("Failed to send notification: {}", e.getMessage());
             throw new InternalServerErrorException("Error sending notification: " + e.getMessage());
         }
     }
