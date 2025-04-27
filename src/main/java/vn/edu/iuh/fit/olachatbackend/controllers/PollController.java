@@ -68,4 +68,11 @@ class PollController {
         MessageResponse<PollResponse> response = new MessageResponse<>(200, "Đã ghim bình chọn thành công", true, pinnedPoll);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{pollId}/unpin")
+    public ResponseEntity<MessageResponse<PollResponse>> unpinPoll(@PathVariable String pollId) {
+        PollResponse unpinnedPoll = pollService.unpinPoll(pollId);
+        MessageResponse<PollResponse> response = new MessageResponse<>(200, "Đã bỏ ghim bình chọn", true, unpinnedPoll);
+        return ResponseEntity.ok(response);
+    }
 }

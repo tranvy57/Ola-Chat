@@ -317,7 +317,34 @@ public class PollServiceImpl implements PollService {
 
     @Override
     public PollResponse unpinPoll(String pollId) {
-        return null;
+        User user = getCurrentUser();
+
+        // Check pollId
+        if (pollId == null) {
+            throw new IllegalArgumentException("Poll ID không được để trống");
+        }
+
+        // Check poll exists
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình chọn"));
+
+        // Check exists in group
+        boolean isMember = participantRepository.existsByConversationIdAndUserId(new ObjectId(poll.getGroupId()), user.getId());
+        if (!isMember) {
+            throw new BadRequestException("Bạn không phải là thành viên của nhóm này");
+        }
+
+        // Record pin status
+        poll.setPinned(false);
+        poll = pollRepository.save(poll);
+
+        // Create response
+        PollResponse response = pollMapper.toPollResponse(poll);
+        List<PollOption> options = pollOptionRepository.findByPollId(poll.getId());
+        response.setOptions(options.stream().map(pollMapper::toPollOptionResponse).collect(Collectors.toList()));
+        response.setPinned(poll.isPinned());
+
+        return response;
     }
 
     @Override
