@@ -24,4 +24,7 @@ public interface PollService {
     PollOptionResponse addOption(String pollId, AddOptionRequest request);
     void vote(String pollId, VoteRequest request);
     PollResultsResponse getPollResults(String pollId);
+    PollResponse pinPoll(String pollId);
+    PollResponse unpinPoll(String pollId);
+    PollResponse lockPoll(String pollId);
 }

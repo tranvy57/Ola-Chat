@@ -90,6 +90,7 @@ public class PollServiceImpl implements PollService {
         // Save poll
         Poll poll = pollMapper.toPoll(request);
         poll.setCreatorId(user.getId());
+        poll.setLocked(false);
         poll = pollRepository.save(poll);
 
         // Save option
@@ -117,6 +118,11 @@ public class PollServiceImpl implements PollService {
         // Check poll exists
         Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy bình chọn"));
+
+        // Check poll is locked
+        if (poll.isLocked()) {
+            throw new BadRequestException("Bình chọn đã bị khóa, không thể thêm tùy chọn");
+        }
 
         // Check role
         if (!poll.isAllowAddOptions()) {
@@ -177,6 +183,11 @@ public class PollServiceImpl implements PollService {
         // Check poll expiration
         if (poll.getDeadline() != null && poll.getDeadline().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Bình chọn đã hết hạn, không thể bỏ phiếu");
+        }
+
+        // Check poll is locked
+        if (poll.isLocked()) {
+            throw new BadRequestException("Bình chọn đã bị khóa, không thể vote");
         }
 
         // Check multiple options
@@ -270,6 +281,48 @@ public class PollServiceImpl implements PollService {
         }
 
         return results;
+    }
+
+    @Override
+    public PollResponse pinPoll(String pollId) {
+        User user = getCurrentUser();
+
+        // Check pollId
+        if (pollId == null) {
+            throw new IllegalArgumentException("Poll ID không được để trống");
+        }
+
+        // Check poll exists
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình chọn"));
+
+        // Check exists in group
+        boolean isMember = participantRepository.existsByConversationIdAndUserId(new ObjectId(poll.getGroupId()), user.getId());
+        if (!isMember) {
+            throw new BadRequestException("Bạn không phải là thành viên của nhóm này");
+        }
+
+        // Record pin status
+        poll.setPinned(true);
+        poll = pollRepository.save(poll);
+
+        // Create response
+        PollResponse response = pollMapper.toPollResponse(poll);
+        List<PollOption> options = pollOptionRepository.findByPollId(poll.getId());
+        response.setOptions(options.stream().map(pollMapper::toPollOptionResponse).collect(Collectors.toList()));
+        response.setPinned(poll.isPinned());
+
+        return response;
+    }
+
+    @Override
+    public PollResponse unpinPoll(String pollId) {
+        return null;
+    }
+
+    @Override
+    public PollResponse lockPoll(String pollId) {
+        return null;
     }
 
     private User getCurrentUser() {
