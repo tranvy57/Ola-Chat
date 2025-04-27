@@ -24,6 +24,6 @@ import vn.edu.iuh.fit.olachatbackend.entities.PollOption;
 public interface PollMapper {
     Poll toPoll(CreatePollRequest request);
     PollResponse toPollResponse(Poll poll);
-    PollOption toPollOption(AddOptionRequest request, Long pollId);
+    PollOption toPollOption(AddOptionRequest request, String pollId);
     PollOptionResponse toPollOptionResponse(PollOption option);
 }

@@ -21,7 +21,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResultsResponse;
 
 public interface PollService {
     PollResponse createPoll(CreatePollRequest request);
-    PollOptionResponse addOption(Long pollId, AddOptionRequest request);
-    void vote(Long pollId, VoteRequest request);
-    PollResultsResponse getPollResults(Long pollId, Long userId);
+    PollOptionResponse addOption(String pollId, AddOptionRequest request);
+    void vote(String pollId, VoteRequest request);
+    PollResultsResponse getPollResults(String pollId, String userId);
 }

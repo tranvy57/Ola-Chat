@@ -111,17 +111,45 @@ public class PollServiceImpl implements PollService {
     }
 
     @Override
-    public PollOptionResponse addOption(Long pollId, AddOptionRequest request) {
-        return null;
+    public PollOptionResponse addOption(String pollId, AddOptionRequest request) {
+        // Check pollId
+        if (pollId == null) {
+            throw new IllegalArgumentException("Poll ID không được để trống");
+        }
+
+        // Check poll exists
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình chọn"));
+
+        // Check role
+        if (!poll.isAllowAddOptions()) {
+            throw new BadRequestException("Không được phép thêm tùy chọn cho bình chọn này");
+        }
+
+        // Check poll expiration
+        if (poll.getDeadline() != null && poll.getDeadline().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Bình chọn đã hết hạn, không thể thêm tùy chọn");
+        }
+
+        // Check option
+        if (request.getOptionText() == null || request.getOptionText().trim().isEmpty()) {
+            throw new IllegalArgumentException("Tùy chọn không được để trống");
+        }
+
+        // Save new option
+        PollOption option = pollMapper.toPollOption(request, pollId);
+        option = pollOptionRepository.save(option);
+
+        return pollMapper.toPollOptionResponse(option);
     }
 
     @Override
-    public void vote(Long pollId, VoteRequest request) {
+    public void vote(String pollId, VoteRequest request) {
 
     }
 
     @Override
-    public PollResultsResponse getPollResults(Long pollId, Long userId) {
+    public PollResultsResponse getPollResults(String pollId, String userId) {
         return null;
     }
 

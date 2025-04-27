@@ -15,12 +15,11 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.AddOptionRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.CreatePollRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollOptionResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResponse;
 import vn.edu.iuh.fit.olachatbackend.services.PollService;
 
@@ -33,7 +32,15 @@ class PollController {
     @PostMapping
     public ResponseEntity<MessageResponse<PollResponse>> createPoll(@RequestBody CreatePollRequest request) {
         PollResponse createdPoll = pollService.createPoll(request);
-        MessageResponse<PollResponse> response = new MessageResponse<>(201, "Poll created successfully", true, createdPoll);
+        MessageResponse<PollResponse> response = new MessageResponse<>(201, "Tạo bình chọn thành công", true, createdPoll);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/{pollId}/options")
+    public ResponseEntity<MessageResponse<PollOptionResponse>> addOption(@PathVariable String pollId,
+                                                                         @RequestBody AddOptionRequest request) {
+        PollOptionResponse addedOption = pollService.addOption(pollId, request);
+        MessageResponse<PollOptionResponse> response = new MessageResponse<>(201, "Thêm lựa chọn thành công", true, addedOption);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
