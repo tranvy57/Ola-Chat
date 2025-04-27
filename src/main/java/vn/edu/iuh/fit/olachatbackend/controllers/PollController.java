@@ -75,4 +75,11 @@ class PollController {
         MessageResponse<PollResponse> response = new MessageResponse<>(200, "Đã bỏ ghim bình chọn", true, unpinnedPoll);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{pollId}/lock")
+    public ResponseEntity<MessageResponse<PollResponse>> lockPoll(@PathVariable String pollId) {
+        PollResponse lockedPoll = pollService.lockPoll(pollId);
+        MessageResponse<PollResponse> response = new MessageResponse<>(200, "Poll locked successfully", true, lockedPoll);
+        return ResponseEntity.ok(response);
+    }
 }

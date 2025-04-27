@@ -349,7 +349,39 @@ public class PollServiceImpl implements PollService {
 
     @Override
     public PollResponse lockPoll(String pollId) {
-        return null;
+        User user = getCurrentUser();
+
+        // Check pollId
+        if (pollId == null) {
+            throw new IllegalArgumentException("Poll ID không được để trống");
+        }
+
+        // Check poll exists
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình chọn"));
+
+        // Check exists in group
+        boolean isMember = participantRepository.existsByConversationIdAndUserId(new ObjectId(poll.getGroupId()), user.getId());
+        if (!isMember) {
+            throw new BadRequestException("Bạn không phải là thành viên của nhóm này");
+        }
+
+        // Check poll locked
+        if (poll.isLocked()) {
+            throw new IllegalArgumentException("Bình chọn đã bị khóa từ trước");
+        }
+
+        // Save poll
+        poll.setLocked(true);
+        poll = pollRepository.save(poll);
+
+        // Create response
+        PollResponse response = pollMapper.toPollResponse(poll);
+        List<PollOption> options = pollOptionRepository.findByPollId(poll.getId());
+        response.setOptions(options.stream().map(pollMapper::toPollOptionResponse).collect(Collectors.toList()));
+        response.setLocked(poll.isLocked());
+
+        return response;
     }
 
     private User getCurrentUser() {
