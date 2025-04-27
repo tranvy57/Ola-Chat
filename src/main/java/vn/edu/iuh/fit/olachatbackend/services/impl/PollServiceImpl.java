@@ -19,9 +19,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AddOptionRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.CreatePollRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.VoteRequest;
-import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollOptionResponse;
-import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResponse;
-import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResultsResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.*;
 import vn.edu.iuh.fit.olachatbackend.entities.*;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
@@ -30,7 +28,9 @@ import vn.edu.iuh.fit.olachatbackend.repositories.*;
 import vn.edu.iuh.fit.olachatbackend.services.PollService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -205,8 +205,60 @@ public class PollServiceImpl implements PollService {
     }
 
     @Override
-    public PollResultsResponse getPollResults(String pollId, String userId) {
-        return null;
+    public PollResultsResponse getPollResults(String pollId) {
+        User user = getCurrentUser();
+
+        // Check poolId
+        if (pollId == null) {
+            throw new BadRequestException("Poll ID không được để trống");
+        }
+
+        // Check userId
+        if (user.getId() == null) {
+            throw new BadRequestException("User ID không được để trống");
+        }
+
+        // Check if poll exists
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy bình chọn"));
+
+        // Check exists in group
+        boolean isMember = participantRepository.existsByConversationIdAndUserId(new ObjectId(poll.getGroupId()), user.getId());
+        if (!isMember) {
+            throw new BadRequestException("Bạn không phải là thành viên của nhóm này");
+        }
+
+        // Check view role (if hide results until vote)
+        if (poll.isHideResultsUntilVoted()) {
+            List<Vote> userVotes = voteRepository.findByPollIdAndUserId(pollId, user.getId());
+            if (userVotes.isEmpty()) {
+                throw new BadRequestException("Kết quả sẽ được ẩn cho đến khi bạn bỏ phiếu!");
+            }
+        }
+
+        // Get data to create response
+        List<PollOption> options = pollOptionRepository.findByPollId(pollId);
+        List<Vote> votes = voteRepository.findByPollId(pollId);
+        Map<String, Integer> voteCounts = votes.stream()
+                .collect(Collectors.groupingBy(Vote::getOptionId, Collectors.summingInt(v -> 1)));
+
+        PollResultsResponse results = new PollResultsResponse();
+        PollResponse pollResponse = pollMapper.toPollResponse(poll);
+        pollResponse.setOptions(options.stream().map(pollMapper::toPollOptionResponse).collect(Collectors.toList()));
+
+        results.setPoll(pollResponse);
+        results.setOptions(options.stream()
+                .map(opt -> new PollOptionResult(pollMapper.toPollOptionResponse(opt), voteCounts.getOrDefault(opt.getId(), 0)))
+                .collect(Collectors.toList()));
+        if (!poll.isHideVoters()) {
+            results.setVoters(votes.stream()
+                    .map(vote -> new Voter(vote.getUserId(), vote.getOptionId()))
+                    .collect(Collectors.toList()));
+        } else {
+            results.setVoters(new ArrayList<>());
+        }
+
+        return results;
     }
 
     private User getCurrentUser() {

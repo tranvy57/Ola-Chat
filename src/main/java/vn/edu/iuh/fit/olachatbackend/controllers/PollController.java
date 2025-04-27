@@ -22,6 +22,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.VoteRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollOptionResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResponse;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResultsResponse;
 import vn.edu.iuh.fit.olachatbackend.services.PollService;
 
 @RestController
@@ -49,6 +50,13 @@ class PollController {
     public ResponseEntity<MessageResponse<String>> vote(@PathVariable String pollId, @RequestBody VoteRequest request) {
         pollService.vote(pollId, request);
         MessageResponse<String> response = new MessageResponse<>(200, "Vote đã được ghi nhận thành công", true, null);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{pollId}/results")
+    public ResponseEntity<MessageResponse<PollResultsResponse>> getPollResults(@PathVariable String pollId) {
+        PollResultsResponse results = pollService.getPollResults(pollId);
+        MessageResponse<PollResultsResponse> response = new MessageResponse<>(200, "Lấy kết quả bình chọn thành công", true, results);
         return ResponseEntity.ok(response);
     }
 }
