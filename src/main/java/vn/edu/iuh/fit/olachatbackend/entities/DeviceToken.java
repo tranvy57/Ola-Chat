@@ -29,4 +29,5 @@ public class DeviceToken {
     private String id;
     private String userId;
     private String token;
+    private String deviceId;
 }
