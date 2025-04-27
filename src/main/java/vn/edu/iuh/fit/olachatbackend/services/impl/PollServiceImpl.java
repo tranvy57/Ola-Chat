@@ -133,6 +133,17 @@ public class PollServiceImpl implements PollService {
             throw new BadRequestException("Tùy chọn không được để trống");
         }
 
+        List<PollOption> existingOptions = pollOptionRepository.findByPollId(pollId);
+
+        // Check for duplicate content (case insensitive, remove spaces)
+        String newOptionNormalized = request.getOptionText().trim().toLowerCase();
+        for (PollOption existingOption : existingOptions) {
+            String existingOptionNormalized = existingOption.getOptionText().trim().toLowerCase();
+            if (existingOptionNormalized.equals(newOptionNormalized)) {
+                throw new BadRequestException("Tùy chọn đã tồn tại");
+            }
+        }
+
         // Save new option
         PollOption option = pollMapper.toPollOption(request, pollId);
         option = pollOptionRepository.save(option);
