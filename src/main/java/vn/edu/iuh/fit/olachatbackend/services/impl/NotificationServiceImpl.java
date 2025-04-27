@@ -159,4 +159,23 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    @Override
+    public void notifyUserMentioned(String senderId, String receiverId, String conversationId, String title, String body, NotificationType notificationType) {
+        DeviceToken deviceToken = deviceTokenRepository.findByUserId(receiverId);
+        if (deviceToken == null) {
+            System.err.println("Không thể tìm thấy token cho người nhận: " + receiverId);
+            return;
+        }
+
+        NotificationRequest notificationRequest = NotificationRequest.builder()
+                .title(title)
+                .body(body)
+                .token(deviceToken.getToken())
+                .type(notificationType)
+                .senderId(senderId)
+                .receiverId(receiverId)
+                .build();
+
+        sendNotification(notificationRequest);
+    }
 }

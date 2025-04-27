@@ -14,6 +14,7 @@ package vn.edu.iuh.fit.olachatbackend.dtos.requests;
 
 import lombok.*;
 import vn.edu.iuh.fit.olachatbackend.entities.DeliveryStatus;
+import vn.edu.iuh.fit.olachatbackend.entities.Mention;
 import vn.edu.iuh.fit.olachatbackend.entities.ReadStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageStatus;
 import vn.edu.iuh.fit.olachatbackend.enums.MessageType;
@@ -37,4 +38,5 @@ public class MessageRequest {
     private List<ReadStatus> readStatus;
     private LocalDateTime createdAt;
     private boolean recalled;
+    private List<Mention> mentions;
 }

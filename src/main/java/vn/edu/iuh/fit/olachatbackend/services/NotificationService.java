@@ -26,4 +26,5 @@ public interface NotificationService {
     NotificationPageDTO getNotificationsByUser(String userId, Pageable pageable);
     void markAsRead(String notificationId);
     void notifyConversation(String conversationId, String senderId, String title, String body, NotificationType type);
+    void notifyUserMentioned(String senderId, String receiverId, String conversationId, String title, String body, NotificationType notificationType);
 }
