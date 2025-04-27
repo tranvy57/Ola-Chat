@@ -22,10 +22,7 @@ import vn.edu.iuh.fit.olachatbackend.dtos.requests.VoteRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollOptionResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResultsResponse;
-import vn.edu.iuh.fit.olachatbackend.entities.Conversation;
-import vn.edu.iuh.fit.olachatbackend.entities.Poll;
-import vn.edu.iuh.fit.olachatbackend.entities.PollOption;
-import vn.edu.iuh.fit.olachatbackend.entities.User;
+import vn.edu.iuh.fit.olachatbackend.entities.*;
 import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.mappers.PollMapper;
@@ -114,12 +111,12 @@ public class PollServiceImpl implements PollService {
     public PollOptionResponse addOption(String pollId, AddOptionRequest request) {
         // Check pollId
         if (pollId == null) {
-            throw new IllegalArgumentException("Poll ID không được để trống");
+            throw new BadRequestException("Poll ID không được để trống");
         }
 
         // Check poll exists
         Poll poll = pollRepository.findById(pollId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình chọn"));
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy bình chọn"));
 
         // Check role
         if (!poll.isAllowAddOptions()) {
@@ -128,12 +125,12 @@ public class PollServiceImpl implements PollService {
 
         // Check poll expiration
         if (poll.getDeadline() != null && poll.getDeadline().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Bình chọn đã hết hạn, không thể thêm tùy chọn");
+            throw new BadRequestException("Bình chọn đã hết hạn, không thể thêm tùy chọn");
         }
 
         // Check option
         if (request.getOptionText() == null || request.getOptionText().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tùy chọn không được để trống");
+            throw new BadRequestException("Tùy chọn không được để trống");
         }
 
         // Save new option
@@ -145,7 +142,66 @@ public class PollServiceImpl implements PollService {
 
     @Override
     public void vote(String pollId, VoteRequest request) {
+        User user = getCurrentUser();
 
+        // Check pollId
+        if (pollId == null) {
+            throw new BadRequestException("Poll ID không được để trống");
+        }
+
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy bình chọn"));
+
+        // Check exists in group
+        boolean isMember = participantRepository.existsByConversationIdAndUserId(new ObjectId(poll.getGroupId()), user.getId());
+        if (!isMember) {
+            throw new BadRequestException("Bạn không phải là thành viên của nhóm này");
+        }
+
+        // Check the list option Ids are not empty
+        if (request.getOptionIds() == null || request.getOptionIds().isEmpty()) {
+            throw new BadRequestException("Ít nhất một tùy chọn phải được chọn");
+        }
+
+        // Check poll expiration
+        if (poll.getDeadline() != null && poll.getDeadline().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Bình chọn đã hết hạn, không thể bỏ phiếu");
+        }
+
+        // Check multiple options
+        if (!poll.isAllowMultipleChoices() && request.getOptionIds().size() > 1) {
+            throw new BadRequestException("Không được phép lựa chọn nhiều cho bình chọn này");
+        }
+
+        // Check user votes are not accepted (if multiple selection is not allowed)
+        if (!poll.isAllowMultipleChoices()) {
+            List<Vote> existingVotes = voteRepository.findByPollIdAndUserId(pollId, user.getId());
+            if (!existingVotes.isEmpty()) {
+                // If voted, delete previous vote
+                voteRepository.deleteAll(existingVotes);
+            }
+        }
+
+        // Check if optionId exists in poll
+        List<String> validOptionIds = pollOptionRepository.findByPollId(pollId)
+                .stream()
+                .map(PollOption::getId)
+                .toList();
+
+        for (String optionId : request.getOptionIds()) {
+            if (!validOptionIds.contains(optionId)) {
+                throw new BadRequestException("Invalid option ID: " + optionId);
+            }
+        }
+
+        // Save vote
+        for (String optionId : request.getOptionIds()) {
+            Vote vote = new Vote();
+            vote.setPollId(pollId);
+            vote.setUserId(user.getId());
+            vote.setOptionId(optionId);
+            voteRepository.save(vote);
+        }
     }
 
     @Override

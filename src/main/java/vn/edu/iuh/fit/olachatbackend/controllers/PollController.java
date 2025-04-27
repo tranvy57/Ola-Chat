@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.AddOptionRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.CreatePollRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.VoteRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollOptionResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.PollResponse;
@@ -42,5 +43,12 @@ class PollController {
         PollOptionResponse addedOption = pollService.addOption(pollId, request);
         MessageResponse<PollOptionResponse> response = new MessageResponse<>(201, "Thêm lựa chọn thành công", true, addedOption);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/{pollId}/vote")
+    public ResponseEntity<MessageResponse<String>> vote(@PathVariable String pollId, @RequestBody VoteRequest request) {
+        pollService.vote(pollId, request);
+        MessageResponse<String> response = new MessageResponse<>(200, "Vote đã được ghi nhận thành công", true, null);
+        return ResponseEntity.ok(response);
     }
 }

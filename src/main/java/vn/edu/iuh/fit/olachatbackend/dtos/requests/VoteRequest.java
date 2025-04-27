@@ -19,6 +19,5 @@ import java.util.List;
 @Data
 @Builder
 public class VoteRequest {
-    private String userId;
     private List<String> optionIds;
 }
