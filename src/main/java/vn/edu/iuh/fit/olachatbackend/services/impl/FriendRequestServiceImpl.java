@@ -109,9 +109,9 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         User currentUser = getCurrentUser();
         List<FriendRequest> requests = friendRequestRepository.findByReceiverAndStatus(currentUser, RequestStatus.PENDING);
 
-        if (requests.isEmpty()) {
-            throw new NotFoundException("Bạn chưa nhận được lời mời kết bạn.");
-        }
+//        if (requests.isEmpty()) {
+//            throw new NotFoundException("Bạn chưa nhận được lời mời kết bạn.");
+//        }
 
         return requests.stream()
                 .map(req -> new FriendRequestResponse(
@@ -127,9 +127,9 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         User currentUser = getCurrentUser();
         List<FriendRequest> requests = friendRequestRepository.findBySenderAndStatus(currentUser, RequestStatus.PENDING);
 
-        if (requests.isEmpty()) {
-            throw new NotFoundException("Bạn chưa gửi bất kì lời mời kết nào.");
-        }
+//        if (requests.isEmpty()) {
+//            throw new NotFoundException("Bạn chưa gửi bất kì lời mời kết nào.");
+//        }
 
         return requests.stream()
                 .map(req -> new FriendRequestResponse(
