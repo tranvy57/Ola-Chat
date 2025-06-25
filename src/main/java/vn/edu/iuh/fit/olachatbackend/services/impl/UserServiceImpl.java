@@ -12,36 +12,36 @@ package vn.edu.iuh.fit.olachatbackend.services.impl;
  * @version:    1.0
  */
 
-import com.nimbusds.jose.JOSEException;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.IntrospectRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserRegisterRequest;
+import vn.edu.iuh.fit.olachatbackend.dtos.requests.UserUpdateInfoRequest;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.IntrospectResponse;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.UserResponse;
 import vn.edu.iuh.fit.olachatbackend.entities.Participant;
 import vn.edu.iuh.fit.olachatbackend.entities.User;
-import vn.edu.iuh.fit.olachatbackend.enums.AuthProvider;
-import vn.edu.iuh.fit.olachatbackend.enums.Role;
-import vn.edu.iuh.fit.olachatbackend.enums.UserStatus;
+import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.InternalServerErrorException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.NotFoundException;
 import vn.edu.iuh.fit.olachatbackend.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.olachatbackend.mappers.UserMapper;
 import vn.edu.iuh.fit.olachatbackend.repositories.ParticipantRepository;
 import vn.edu.iuh.fit.olachatbackend.repositories.UserRepository;
-import vn.edu.iuh.fit.olachatbackend.services.AuthenticationService;
-import vn.edu.iuh.fit.olachatbackend.services.UserService;
+import vn.edu.iuh.fit.olachatbackend.services.*;
+import vn.edu.iuh.fit.olachatbackend.utils.OtpUtils;
 
-import java.text.ParseException;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -52,13 +52,18 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final ParticipantRepository participantRepository;
     private final AuthenticationService authenticationService;
+    private final RedisService redisService;
+    private final CloudinaryService cloudinaryService;
+    private final EmailService emailService;
 
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
-    public Optional<User> getUserById(String id) {
-        return userRepository.findById(id);
+    public UserResponse getUserById(String id) {
+        return userRepository.findById(id)
+                .map(userMapper::toUserResponse)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với id: " + id));
     }
 
     @Override
@@ -139,4 +144,155 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public UserResponse updateMyInfo(UserUpdateInfoRequest request) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+
+        if (request.getDob() != null) {
+            user.setDob(request.getDob().atStartOfDay());
+        }
+
+        if (request.getStatus() != null) {
+            user.setStatus(request.getStatus());
+        }
+
+        if (request.getDisplayName() != null) {
+            user.setDisplayName(request.getDisplayName());
+        }
+
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        return userMapper.toUserResponse(updatedUser);
+    }
+
+    @Override
+    public UserResponse changePassword(String oldPassword, String newPassword) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        // Giới hạn 1 giờ/lần đổi mật khẩu
+        String redisKey = "PASSWORD_CHANGE_LIMIT:" + user.getId();
+        Long lastChanged = redisService.getLong(redisKey);
+        long now = System.currentTimeMillis();
+
+        if (lastChanged != null && (now - lastChanged) < 3600_000) {
+            throw new UnauthorizedException("Bạn chỉ có thể đổi mật khẩu mỗi 1 giờ. Vui lòng thử lại sau.");
+        }
+
+        // Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new UnauthorizedException("Mật khẩu cũ không chính xác");
+        }
+
+        // Đổi mật khẩu và cập nhật
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+
+        User updatedUser = userRepository.save(user);
+
+        // Cập nhật mốc thời gian đổi mật khẩu gần nhất vào Redis
+        redisService.setLong(redisKey, now, 1, TimeUnit.HOURS);
+
+        return userMapper.toUserResponse(updatedUser);
+    }
+  
+    @Override
+    public UserResponse searchUserByPhoneOrEmail(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            throw new IllegalArgumentException("Query không được để trống");
+        }
+
+        Optional<User> user;
+        if (query.contains("@")) {
+            user = userRepository.findByEmail(query);
+        } else {
+            user = userRepository.findByUsername(query);
+        }
+
+        if(user.isEmpty()) {
+            throw new NotFoundException("Không tìm thấy người dùng");
+        }
+
+        return userMapper.toUserResponse(user.get());
+    }
+
+    @Override
+    public UserResponse updateUserAvatar( MultipartFile avatar) throws IOException {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        String avatarUrl = cloudinaryService.uploadImage(avatar);
+        user.setAvatar(avatarUrl);
+
+        userRepository.save(user);
+        return userMapper.toUserResponse(user);
+    }
+
+
+    @Override
+    public void requestEmailUpdate(String newEmail) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng này"));
+
+        if (newEmail.equalsIgnoreCase(user.getEmail())) {
+            throw new BadRequestException("Email mới không được trùng với email hiện tại");
+        }
+
+        String userId = user.getId();
+        String otpCode = OtpUtils.generateOtp();
+
+        redisService.saveEmailUpdateOtp(userId, otpCode, newEmail);
+        emailService.sendVerifyNewEmail(newEmail, otpCode);
+    }
+
+
+    @Override
+    public UserResponse verifyAndUpdateEmail(String otpInput) {
+        var context = SecurityContextHolder.getContext();
+        String currentUsername = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng."));
+
+        String userId = user.getId();
+
+        String storedOtp = redisService.getEmailUpdateOtp(userId);
+        String newEmail = redisService.getEmailUpdateNewEmail(userId);
+
+        if (storedOtp == null || newEmail == null) {
+            throw new BadRequestException("OTP đã hết hạn hoặc không hợp lệ.");
+        }
+
+        if (!storedOtp.equals(otpInput)) {
+            throw new BadRequestException("Mã OTP không chính xác.");
+        }
+
+        user.setEmail(newEmail);
+        User savedUser = userRepository.save(user);
+
+        redisService.deleteEmailUpdateOtp(userId);
+
+        return userMapper.toUserResponse(savedUser);
+    }
 }

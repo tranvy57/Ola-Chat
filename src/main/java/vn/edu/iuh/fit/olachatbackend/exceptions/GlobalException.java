@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 
 @ControllerAdvice
@@ -47,19 +48,19 @@ public class GlobalException {
         return new ResponseEntity<>(errorDto, HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(InternalServerErrorException.class)
-    public ResponseEntity<ErrorMessageDto> InternalServerError(InternalServerErrorException exc) {
-        MessageResponse error = new MessageResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), exc.getMessage(), false);
-        ErrorMessageDto errorDto = new ErrorMessageDto(error.getStatusCode(), error.getMessage(), error.isSuccess());
-        return new ResponseEntity<>(errorDto, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorMessageDto> RuntimeErrorException(RuntimeException exc) {
-        MessageResponse error = new MessageResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), exc.getMessage(), false);
-        ErrorMessageDto errorDto = new ErrorMessageDto(error.getStatusCode(), error.getMessage(), error.isSuccess());
-        return new ResponseEntity<>(errorDto, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+//    @ExceptionHandler(InternalServerErrorException.class)
+//    public ResponseEntity<ErrorMessageDto> InternalServerError(InternalServerErrorException exc) {
+//        MessageResponse error = new MessageResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), exc.getMessage(), false);
+//        ErrorMessageDto errorDto = new ErrorMessageDto(error.getStatusCode(), error.getMessage(), error.isSuccess());
+//        return new ResponseEntity<>(errorDto, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
+//
+//    @ExceptionHandler(RuntimeException.class)
+//    public ResponseEntity<ErrorMessageDto> RuntimeErrorException(RuntimeException exc) {
+//        MessageResponse error = new MessageResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), exc.getMessage(), false);
+//        ErrorMessageDto errorDto = new ErrorMessageDto(error.getStatusCode(), error.getMessage(), error.isSuccess());
+//        return new ResponseEntity<>(errorDto, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
 
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -78,5 +79,11 @@ public class GlobalException {
                 .build();
 
         return ResponseEntity.badRequest().body(apiResponse);
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<MessageResponse> handleNotFound(NoHandlerFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new MessageResponse(404, "Không tìm thấy trang yêu cầu!", false));
     }
 }

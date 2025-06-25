@@ -6,7 +6,6 @@ import vn.edu.iuh.fit.olachatbackend.exceptions.BadRequestException;
 
 @Service
 public class TestService {
-
     public TestDto getTestDto() {
         throw new BadRequestException("Test exception");
     }

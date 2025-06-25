@@ -5,14 +5,25 @@ server:
       max-file-size: 10MB
       max-request-size: 10MB
   tomcat:
-        max-http-header-size: 64KB
+    max-http-header-size: 64KB
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.starttls.enable: false
+
   datasource:
-    url: jdbc:mysql://yamabiko.proxy.rlwy.net:23769/railway
-    username: root
-    password: PhebhloJhVHvParqlvvXXafFkRHEDSBj
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
@@ -20,37 +31,43 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb+srv://mongodb:mongopassword@ola-cluster.2db1h.mongodb.net/?retryWrites=true&w=majority&appName=ola-chat-db
-      database: ola-chat
-    redis:
-      host: localhost
-      port: 6379
-      password:
-      timeout: 60000
-#    redis:
-#      host: maglev.proxy.rlwy.net
-#      port: 30825
-#      username: default
-#      password: RyTQwEZwwUnrJcNObOxamkGOSwoUnNBl
-#      ssl:
-#        enabled: true
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE}
 
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USER}
+      password: ${REDIS_PASS}
+      timeout: 60000
 
 cloudinary:
-  cloud_name: dwip7dplu
-  api_key: 944366892271352
-  api_secret: SGhlTmcznfxn-1T0T8D2BQQOA9Q
+  cloud_name: ${CLOUDINARY_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}
 
 jwt:
-  signerKey: zhRPPUbgnHMtrH0Fj3reft+wa6HFXDlcwSNbTPEA3cQUdCb4aXANrlQntnH1QAYc
-  valid-duration: 3600
-  refreshable-duration: 36000
-
+  signerKey: ${JWT_SIGNER_KEY}
+  valid-duration: ${JWT_VALID_DURATION}
+  refreshable-duration: ${JWT_REFRESHABLE_DURATION}
 
 google:
-#  client-id: 45263756239-gego0gvi3fpc5f4flplmipl410vf35hp.apps.googleusercontent.com
-  googleClientId: 714231235616-gorl6sl5fja3tgja1pfl9la9qd3b9orf.apps.googleusercontent.com
-  androidClientId: 714231235616-baubhlnvjrkfgt1k09dlchf7meiuj7s7.apps.googleusercontent.com
+  googleClientId: ${GOOGLE_CLIENT_ID}
+  androidClientId: ${GOOGLE_ANDROID_CLIENT_ID}
+
 facebook:
-  client-id: 1305964487147806
-  client-secret: 18270cccad0551a87941a25cf8bf56b0
+  client-id: ${FACEBOOK_CLIENT_ID}
+  client-secret: ${FACEBOOK_CLIENT_SECRET}
+
+twilio:
+  account:
+    sid: ${ACCOUNT_SID}
+  auth:
+    token: ${AUTH_TOKEN}
+  phone:
+    number: ${TWILIO_PHONE_NUMBER}
+
+vonage:
+  api-key: ${VONAGE_API_KEY}
+  api-secret: ${VONAGE_API_SECRET}
+  from: ${VONAGE_SENDER}

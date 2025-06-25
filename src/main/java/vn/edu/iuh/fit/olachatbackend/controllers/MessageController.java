@@ -14,10 +14,8 @@ package vn.edu.iuh.fit.olachatbackend.controllers;
 
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.olachatbackend.dtos.MessageDTO;
-import vn.edu.iuh.fit.olachatbackend.entities.Message;
+import vn.edu.iuh.fit.olachatbackend.dtos.responses.MessageResponse;
 import vn.edu.iuh.fit.olachatbackend.services.MessageService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -32,5 +30,33 @@ public class MessageController {
     public MessageDTO createMessage(@RequestBody MessageDTO messageDTO) {
         return messageService.save(messageDTO);
     }
+
+    @PutMapping("/{messageId}/received")
+    public MessageResponse<String> markAsReceived(
+            @PathVariable String messageId,
+            @RequestParam String userId
+    ) {
+        messageService.markMessageAsReceived(messageId, userId);
+        return MessageResponse.<String>builder()
+                .message("Đã đánh dấu tin nhắn là đã nhận.")
+                .data(messageId)
+                .build();
+    }
+
+
+    @PutMapping("/{messageId}/read")
+    public MessageResponse<String> markAsRead(
+            @PathVariable String messageId,
+            @RequestParam String userId
+    ) {
+        messageService.markMessageAsRead(messageId, userId);
+        return MessageResponse.<String>builder()
+                .message("Đánh dấu đã đọc thành công.")
+                .data("OK")
+                .build();
+    }
+
+
+
 
 }

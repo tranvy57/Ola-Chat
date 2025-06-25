@@ -28,16 +28,23 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {"/auth/login", "/auth/introspect", "/auth/logout",
-            "/auth/refresh", "/users/**", "/v3/api-docs/**", "/swagger-ui/**",
-            "/api/conversations", "/api/conversations/**", "/api/users/**", "/api/messages", "/ws", "/ws/**", "/user/**", "/app/**",
-            "/api/groups", "/api/groups/**",
-            "/auth/**", "/api/users/me"
-
+    private final String[] PUBLIC_ENDPOINTS = {
+            "/auth/login", "/auth/introspect", "/auth/logout", "/auth/forgot-password", "/auth/reset-password","/app/**",
+            "/auth/refresh",
+            "/v3/api-docs/**", "/swagger-ui/**",
+            "/api/messages/**",
+            "/ws", "/ws/**",
+            "/twilio/**",
+            "/otp/**",
+            "/api/login-history/**",
+            "/files/**",
+            "/api/friends/**",
+            "/api/notifications/register-device",
+//            "/api/notifications/**",
+            "/users"
     };
 
-    private final String[] ADMIN_ENDPOINTS = { "/api/users"
-
+    private final String[] ADMIN_ENDPOINTS = { "/api/users",
     };
 
     @Autowired
@@ -50,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.PUT, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.DELETE, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, ADMIN_ENDPOINTS).hasRole("ADMIN")
                         .anyRequest().authenticated());
 
@@ -61,7 +69,8 @@ public class SecurityConfig {
 
         httpSecurity.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOrigins(List.of("http://localhost:3000")); // Cho phép React truy cập
+//            config.setAllowedOrigins(List.of("http://localhost:3000")); // Cho phép React truy cập
+            config.setAllowedOriginPatterns(List.of("*"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setAllowCredentials(true);
@@ -75,6 +84,7 @@ public class SecurityConfig {
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+        jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);

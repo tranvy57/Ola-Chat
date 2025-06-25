@@ -33,12 +33,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String username;
+    private String nickname;
     private String password;
     private String displayName;
 
     @Column(unique = true)
     private String email;
+    @Column(length = 1000)
     private String avatar;
+
+    private String bio;
     private LocalDateTime dob;
     @Enumerated(EnumType.STRING)
     private UserStatus status;
@@ -57,10 +61,18 @@ public class User {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+
         if (this.status == null) {
             this.status = UserStatus.ACTIVE;
         }
+        if (this.role == null) {
+            this.role = Role.USER; // mặc định role là USER
+        }
+        if (this.authProvider == null) {
+            this.authProvider = AuthProvider.LOCAL; // mặc định authProvider là LOCAL
+        }
     }
+
 
     @PreUpdate
     public void preUpdate() {

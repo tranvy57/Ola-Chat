@@ -1,10 +1,27 @@
-HELP.md
+# Ignore node_modules and dependencies
+node_modules/
+
+# Ignore build artifacts
 target/
-!.mvn/wrapper/maven-wrapper.jar
+dist/
+build/
+out/
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
+# Ignore environment files
+.env
+
+# Ignore IDE and editor settings
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# Ignore STS-specific files
 .apt_generated
 .classpath
 .factorypath
@@ -13,21 +30,37 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+# Ignore NetBeans-specific files
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# Ignore Docker data and MySQL files
+docker/data/
+docker/data/ola-volumn/mysql.sock
+docker/data/ola-volumn/*.cnf
+docker/data/ola-volumn/*.index
+docker/data/ola-volumn/ib_buffer_pool
+
+# Ignore log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Maven Wrapper
+!.mvn/wrapper/maven-wrapper.jar
+
+# Ignore Help documentation
+HELP.md
+
+src/main/resources/fileDownload/
+src/main/resources/serviceAccountKey.json
+
+.idea/
